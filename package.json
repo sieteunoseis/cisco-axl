@@ -1,0 +1,26 @@
+{
+  "name": "cisco-axl",
+  "version": "1.0.1",
+  "description": "Package to make Cisco AXL easier",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js"
+  },
+  "keywords": [
+    "cisco",
+    "node",
+    "axl",
+    "soap",
+    "xml",
+    "callmanager"
+  ],
+  "author": "Jeremy Worden",
+  "license": "MIT",
+  "dependencies": {
+    "soap": "^0.45.0",
+    "strong-soap": "^3.4.0"
+  },
+  "devDependencies": {
+    "node-emoji": "^1.11.0"
+  }
+}
