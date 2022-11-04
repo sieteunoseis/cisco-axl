@@ -31,9 +31,8 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 ## Features
 
 * This library uses strong-soap to parse the AXL WSDL file. As a result any AXL function for your specified version is avaliable to use!
-* Supports the Promise API
-* Returns all results in JSON rather than XML
-* Automatically cleans up SQL queries to avoid injection
+* Supports the Promise API. Can chain procedures together.
+* Returns all results in JSON rather than XML. Optional flag to remove all blank or empty fields from JSON results.
 
 ## Usage
 

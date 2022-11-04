@@ -1,7 +1,9 @@
-var soap = require("strong-soap").soap;
-var XMLHandler = soap.XMLHandler;
-var xmlHandler = new XMLHandler();
-var WSDL = soap.WSDL;
+const soap = require("strong-soap").soap;
+const WSDL = soap.WSDL;
+const wsdlOptions = {
+  attributesKey: "attributes",
+  valueKey: "value",
+};
 
 /**
  * Cisco axlService Service
@@ -23,7 +25,7 @@ class axlService {
   returnMethods(filter) {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
-      soap.createClient(options.url, {}, function (err, client) {
+      soap.createClient(options.url, wsdlOptions, function (err, client) {
         client.setSecurity(
           new soap.BasicAuthSecurity(options.username, options.password)
         );
@@ -95,13 +97,13 @@ class axlService {
       );
     });
   }
-  executeMethod(method, params) {
+  executeMethod(method, params, clean = false) {
     var options = this._OPTIONS;
     var cleanParams = Object.fromEntries(
       Object.entries(params).filter(([_, v]) => v != "")
     );
     return new Promise((resolve, reject) => {
-      soap.createClient(options.url, {}, function (err, client) {
+      soap.createClient(options.url, wsdlOptions, function (err, client) {
         client.setSecurity(
           new soap.BasicAuthSecurity(options.username, options.password)
         );
@@ -126,7 +128,16 @@ class axlService {
             if (err) {
               reject(err);
             }
-            resolve(result.return);
+            if (result.hasOwnProperty("return")) {
+              var output = result.return;
+              if (clean) {
+                output = cleanObj(result.return);
+              }
+              resolve(output);
+
+            } else {
+              reject(result);
+            }
           }
         );
       });
@@ -152,6 +163,26 @@ const nestedObj = (object) => {
   } else {
     return operObj;
   }
+};
+
+const cleanObj = (object) => {
+  Object.entries(object).forEach(([k, v]) => {
+    if (v && typeof v === "object") {
+      cleanObj(v);
+    }
+    if (
+      (v && typeof v === "object" && !Object.keys(v).length) ||
+      v === null ||
+      v === undefined
+    ) {
+      if (Array.isArray(object)) {
+        object.splice(k, 1);
+      } else {
+        delete object[k];
+      }
+    }
+  });
+  return object;
 };
 
 module.exports = axlService;
