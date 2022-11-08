@@ -79,7 +79,7 @@ Service constructor for methods. Requires a JSON object consisting of hostname, 
 let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
 ```
 
-### axlService.returnOperations(filter?) ⇒ Returns promise
+### service.returnOperations(filter?) ⇒ Returns promise
 
 Method takes optional argument to filter results. No argument returns all operations. Returns results via Promise.
 
@@ -87,7 +87,7 @@ Method takes optional argument to filter results. No argument returns all operat
 | :--------------- | :------- | :----- | :--------- | :---------------------------------- |
 | returnOperations | filter   | string | No         | Provide a string to filter results. |
 
-### axlService.getOperationTags(operation) ⇒ Returns promise
+### service.getOperationTags(operation) ⇒ Returns promise
 
 Method requires passing an AXL operation. Returns results via Promise.
 
@@ -95,7 +95,7 @@ Method requires passing an AXL operation. Returns results via Promise.
 | :--------------- | :-------- | :----- | :--------- | :----------------------------------------------------------------------- |
 | getOperationTags | operation | string | Yes        | Provide the name of the AXL operation you wish to retrieve the tags for. |
 
-### axlService.executeOperation(operation,tags,opts?) ⇒ Returns promise
+### service.executeOperation(operation,tags,opts?) ⇒ Returns promise
 
 Method requires passing an AXL operation and JSON object of tags. Returns results via Promise.
 
