@@ -73,10 +73,10 @@ service
 
 ### new axlService(options)
 
-Service constructor for methods. Requires a JSON object consisting of hostname, username and password.
+Service constructor for methods. Requires a JSON object consisting of hostname, username, password and version.
 
 ```node
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt");
+let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
 ```
 
 ### axlService.returnOperations(filter?) ⇒ Returns promise
@@ -177,6 +177,16 @@ const lineTags = jVar(lineTemplate,{ dataContainerIdentifierTails: "_variables"}
 service.executeOperation("updateLine", lineTags,{ dataContainerIdentifierTails: "_variables"})
 ...
 ```
+
+## Limitations
+
+Currently there is an issue with strong-soap regarding returning nillable values for element tags. These values show if a particular tags is optional or not. Once resolved a method will be added to return tags nillable status (true or false).
+
+## TODO
+
+- Add more promised based examples, particularly a Promise.All() example.
+- Add example for reading in CSV and performing a bulk exercise with variables.
+- Add example for saving SQL output to CSV or uploading to cloud (Airtable or SmartSheets).
 
 ## Giving Back
 
