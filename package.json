@@ -1,11 +1,10 @@
 {
   "name": "cisco-axl",
-  "version": "1.0.2",
-  "description": "A library to make Cisco AXL alot easier",
+  "version": "1.1.0",
+  "description": "A library to make Cisco AXL a lot easier",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js",
-    "sqlTest": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/sqlTest.js"
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js"
   },
   "keywords": [
     "cisco",
@@ -22,6 +21,7 @@
     "strong-soap": "^3.4.0"
   },
   "devDependencies": {
+    "json-variables": "^10.1.0",
     "node-emoji": "^1.11.0"
   }
 }

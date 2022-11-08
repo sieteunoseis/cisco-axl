@@ -26,14 +26,13 @@ WSDL.open(`./schema/current/AXLAPI.wsdl`, wsdlOptions, function (err, wsdl) {
   operationDesc.input.body.elements.map((object) => {
     var operMatch = new RegExp(object.qname.name, "i");
     if (operName.match(operMatch)) {
-      let output = nestedObj(object);
+      nestedObj(object);
     }
   });
 });
 
 const nestedObj = (object) => {
   object.elements.map((object) => {
-    console.log(object.qname.name,object.isNillable);
-    // console.log(object.isNillable);
+    console.log(object.qname.name);
   });
 };

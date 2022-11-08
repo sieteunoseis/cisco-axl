@@ -1,0 +1,151 @@
+{
+    "phone":{
+       "name":"%%_deviceName_%%",
+       "description":"%%_lastName_%%, %%_firstName_%% Extension %%_extension_%%",
+       "product":"Cisco Unified Client Services Framework",
+       "model":"Cisco Unified Client Services Framework",
+       "class":"Phone",
+       "protocol":"SIP",
+       "protocolSide":"User",
+       "devicePoolName":{
+          "value":"Default"
+       },
+       "commonPhoneConfigName":{
+          "value":"Standard Common Phone Profile"
+       },
+       "networkLocation":"Use System Default",
+       "locationName":{
+          "value":"Hub_None"
+       },
+       "loadInformation":{
+          "attributes":{
+             "special":"false"
+          }
+       },
+       "versionStamp":"",
+       "traceFlag":"false",
+       "mlppIndicationStatus":"Off",
+       "preemption":"Disabled",
+       "useTrustedRelayPoint":"Default",
+       "retryVideoCallAsAudio":"true",
+       "securityProfileName":{
+          "value":"Cisco Unified Client Services Framework - UDP"
+       },
+       "sipProfileName":{
+          "value":"Standard SIP Profile"
+       },
+       "useDevicePoolCgpnTransformCss":"true",
+       "sendGeoLocation":"false",
+       "lines":{
+          "line":[
+             {
+                "index":"1",
+                "label":"%%_lastName_%% - %%_extension_%%",
+                "display":"%%_lastName_%%, %%_firstName_%%",
+                "dirn":{
+                   "pattern":"%%_extension_%%"
+                },
+                "ringSetting":"Ring",
+                "consecutiveRingSetting":"Use System Default",
+                "mwlPolicy":"Use System Policy",
+                "displayAscii":"%%_lastName_%%, %%_firstName_%%",
+                "maxNumCalls":"3",
+                "busyTrigger":"2",
+                "callInfoDisplay":{
+                   "callerName":"true",
+                   "callerNumber":"false",
+                   "redirectedNumber":"false",
+                   "dialedNumber":"true"
+                },
+                "recordingFlag":"Call Recording Disabled",
+                "audibleMwi":"Default",
+                "partitionUsage":"General",
+                "associatedEndusers":{
+                   "enduser":[
+                      {
+                         "userId":"%%_userid_%%"
+                      }
+                   ]
+                },
+                "missedCallLogging":"true",
+                "recordingMediaSource":"Gateway Preferred"
+             }
+          ]
+       },
+       "numberOfButtons":"1",
+       "phoneTemplateName":{
+          "value":"Standard Client Services Framework"
+       },
+       "ringSettingIdleBlfAudibleAlert":"Default",
+       "ringSettingBusyBlfAudibleAlert":"Default",
+       "enableExtensionMobility":"false",
+       "currentProfileName":{
+          
+       },
+       "currentConfig":{
+          "phoneTemplateName":{
+             "value":"Standard Client Services Framework"
+          },
+          "mlppIndicationStatus":"Off",
+          "preemption":"Disabled",
+          "ignorePresentationIndicators":"false",
+          "singleButtonBarge":"Default",
+          "joinAcrossLines":"Off",
+          "callInfoPrivacyStatus":"Default",
+          "dndRingSetting":"Disable",
+          "dndOption":"Ringer Off",
+          "alwaysUsePrimeLine":"Default",
+          "alwaysUsePrimeLineForVoiceMessage":"Default",
+          "emccCallingSearchSpaceName":{
+             
+          }
+       },
+       "singleButtonBarge":"Default",
+       "joinAcrossLines":"Off",
+       "builtInBridgeStatus":"Default",
+       "callInfoPrivacyStatus":"Default",
+       "hlogStatus":"On",
+       "ignorePresentationIndicators":"false",
+       "packetCaptureMode":"None",
+       "packetCaptureDuration":"0",
+       "allowCtiControlFlag":"true",
+       "presenceGroupName":{
+          "value":"Standard Presence group"
+       },
+       "unattendedPort":"false",
+       "requireDtmfReception":"false",
+       "rfc2833Disabled":"false",
+       "certificateOperation":"No Pending Operation",
+       "certificateStatus":"None",
+       "deviceMobilityMode":"Default",
+       "remoteDevice":"false",
+       "dndOption":"Ringer Off",
+       "dndRingSetting":"Disable",
+       "dndStatus":"false",
+       "isActive":"true",
+       "isDualMode":"true",
+       "phoneSuite":"Default",
+       "phoneServiceDisplay":"Default",
+       "isProtected":"false",
+       "mtpRequired":"false",
+       "mtpPreferedCodec":"711ulaw",
+       "outboundCallRollover":"No Rollover",
+       "hotlineDevice":"false",
+       "alwaysUsePrimeLine":"Default",
+       "alwaysUsePrimeLineForVoiceMessage":"Default",
+       "deviceTrustMode":"Not Trusted",
+       "AllowPresentationSharingUsingBfcp":"false",
+       "allowiXApplicableMedia":"false",
+       "useDevicePoolCgpnIngressDN":"true",
+       "enableCallRoutingToRdWhenNoneIsActive":"f",
+       "enableActivationID":"false",
+       "allowMraMode":"false"
+    },
+    "phone_data":{
+       "firstName":"Tom",
+       "lastName":"Smith",
+       "extension":"2001",
+       "userid":"user01",
+       "deviceName": "CSFSMITHT"
+    }
+ }

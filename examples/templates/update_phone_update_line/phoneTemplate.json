@@ -1,0 +1,31 @@
+{
+   "name":"%%_deviceName_%%",
+   "description":"%%_lastName_%%, %%_firstName_%% Extension %%_extension_%%",
+   "ownerUserName": "%%_userid_%%",
+   "lines":{
+      "line":[
+         {
+            "index":"1",
+            "dirn":{
+               "pattern":"%%_extension_%%"
+            },
+            "label":"%%_lastName_%% - %%_extension_%%",
+            "display":"%%_lastName_%%, %%_firstName_%%",
+            "displayAscii":"%%_lastName_%%, %%_firstName_%%",
+            "associatedEndusers":{
+               "enduser":[
+                  {
+                     "userId":"%%_userid_%%"
+                  }
+               ]
+            }
+         }]
+   },
+   "_data": {
+      "deviceName":"",
+      "extension": "",
+      "firstName": "",
+      "lastName": "",
+      "userid":""
+    }
+}

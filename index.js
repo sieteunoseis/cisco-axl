@@ -22,7 +22,7 @@ class axlService {
       version: version,
     };
   }
-  returnMethods(filter) {
+  returnOperations(filter) {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
@@ -61,7 +61,7 @@ class axlService {
       });
     });
   }
-  getMethodParams(method) {
+  getOperationTags(operation) {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
       WSDL.open(
@@ -71,10 +71,10 @@ class axlService {
           if (err) {
             reject(err);
           }
-          var operation =
-            wsdl.definitions.bindings.AXLAPIBinding.operations[method];
-          var operName = operation.$name;
-          var operationDesc = operation.describe(wsdl);
+          var operationDef =
+            wsdl.definitions.bindings.AXLAPIBinding.operations[operation];
+          var operName = operationDef.$name;
+          var operationDesc = operationDef.describe(wsdl);
           var envelopeBody = {};
           operationDesc.input.body.elements.map((object) => {
             var operMatch = new RegExp(object.qname.name, "i");
@@ -97,11 +97,15 @@ class axlService {
       );
     });
   }
-  executeMethod(method, params, clean = false) {
+  executeOperation(operation, tags, opts) {
     var options = this._OPTIONS;
-    var cleanParams = Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v != "")
-    );
+
+    var clean = opts?.clean ? opts.clean : false;
+    var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ? opts.dataContainerIdentifierTails : '_data';
+     
+    // Let's remove empty top level strings. Also filter out json-variables
+    Object.keys(tags).forEach((k) => (tags[k] == '' || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
+
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
         client.setSecurity(
@@ -113,22 +117,18 @@ class axlService {
           reject(err.root.Envelope.Body.Fault);
         });
 
-        var axlFunc = client.AXLAPIService.AXLPort[method];
+        var axlFunc = client.AXLAPIService.AXLPort[operation];
 
         axlFunc(
-          cleanParams,
+          tags,
           function (
             err,
             result,
-            envelope,
-            rawResponse,
-            soapHeader,
-            rawRequest
           ) {
             if (err) {
               reject(err);
             }
-            if (result.hasOwnProperty("return")) {
+            if (result?.hasOwnProperty("return")) {
               var output = result.return;
               if (clean) {
                 output = cleanObj(result.return);
@@ -136,7 +136,7 @@ class axlService {
               resolve(output);
 
             } else {
-              reject(result);
+              reject('No return results');
             }
           }
         );

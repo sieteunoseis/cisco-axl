@@ -1,0 +1,12 @@
+{
+   "pattern": "%%_extension_%%",
+   "routePartitionName": "",
+   "alertingName": "%%_firstName_%% %%_lastName_%%",
+   "asciiAlertingName": "%%_firstName_%% %%_lastName_%%",
+   "description": "%%_firstName_%% %%_lastName_%%",
+   "_data": {
+     "extension": "2001",
+     "firstName": "Tom",
+     "lastName": "Smith"
+   }
+ }
