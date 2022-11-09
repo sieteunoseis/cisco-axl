@@ -1,5 +1,6 @@
 const soap = require("strong-soap").soap;
 const WSDL = soap.WSDL;
+const path = require('path');
 const wsdlOptions = {
   attributesKey: "attributes",
   valueKey: "value",
@@ -17,7 +18,7 @@ class axlService {
     this._OPTIONS = {
       username: username,
       password: password,
-      url: `./schema/${version}/AXLAPI.wsdl`,
+      url: path.join(__dirname, `/schema/${version}/AXLAPI.wsdl`),
       endpoint: `https://${host}:8443/axl/`,
       version: version,
     };
@@ -65,8 +66,8 @@ class axlService {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
       WSDL.open(
-        `./schema/${options.version}/AXLAPI.wsdl`,
-        {},
+        path.join(__dirname, `/schema/${options.version}/AXLAPI.wsdl`),
+        wsdlOptions,
         function (err, wsdl) {
           if (err) {
             reject(err);
