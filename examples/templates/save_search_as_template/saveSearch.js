@@ -3,18 +3,16 @@ const path = require("path");
 const fs = require("fs");
 
 /*
-This script using json-variables (https://codsen.com/os/json-variables) to add a new phone from a template. 
-The AXL "addPhone" operation will either add an existing line or add a new one.
-We will be using the "updateLine" to follow behind and update a few of the fields that "addPhone" does not include.
 
-Note: axlService is Promised based, so we using a nested promise. We wait for the "addPhone" promise to be fufilled before calling "updateLine".
+This script will use getPhone to retrieve an existing phone and save as a JSON file. This file can then be edited to use as a template for other operations.
+
 */
 
 // Set up new AXL service (DevNet sandbox credentials: https://devnetsandbox.cisco.com/)
 let service = new axlService(
-  "cucm01-pub.automate.builders",
+  "10.10.20.1",
   "administrator",
-  "h0mel@b",
+  "ciscopsdt",
   "14.0"
 );
 
