@@ -25,11 +25,13 @@ let service = new axlService(
 
   // Make a call to AXL to get the information for the trunk we are copying.
   // Note: we will be sending the clean flag to executeOperation. This will remove any keys in our return json that is empty, undefined or null.
-  var options = {
-    clean: true
+  var opts = {
+    clean: true,
+    removeAttributes: false,
+    dataContainerIdentifierTails: "_data",
   };
 
-  var returnTrunk = await service.executeOperation(operation, tags, options);
+  var returnTrunk = await service.executeOperation(operation, tags, opts);
 
   // Update the JSON with our new values
   operation = "addSipTrunk";

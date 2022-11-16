@@ -15,11 +15,17 @@ let service = new axlService(
 );
 
 (async () => {
+  var opts = {
+    clean: true,
+    removeAttributes: false,
+    dataContainerIdentifierTails: "_data",
+  };
+
   var operation = "getPhone";
   var tags = await service.getOperationTags(operation);
   tags.name = "CSFUSER001";
 
-  var returnPhoneTags = await service.executeOperation(operation, tags, true);
+  var returnPhoneTags = await service.executeOperation(operation, tags, opts);
 
   operation = "addPhone";
   returnPhoneTags.phone.name = "CSFWORDENJ";

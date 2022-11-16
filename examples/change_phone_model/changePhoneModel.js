@@ -23,6 +23,11 @@ let service = new axlService(
 (async () => {
   
   // Variable needed for script
+  var opts = {
+    clean: true,
+    removeAttributes: false,
+    dataContainerIdentifierTails: "_data",
+  };
 
   // What model are we going to convert our phone into?
   // You can get a list of models in CUCM with the SQL query: 'SELECT name from typemodel'
@@ -40,7 +45,7 @@ let service = new axlService(
   tags.name = phoneNameCopyingFrom;
 
   // Execute the AXL call. We set the true flag to clean the output (removes any blank or undefined settings)
-  var returnPhoneTags = await service.executeOperation(operation, tags, true);
+  var returnPhoneTags = await service.executeOperation(operation, tags, opts);
 
   // Now we're going to add a new phone based on the settings. We will updating a few new settings based on the model we will be converting to.
   operation = "addPhone";

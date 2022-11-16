@@ -103,6 +103,7 @@ class axlService {
 
     var clean = opts?.clean ? opts.clean : false;
     var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ? opts.dataContainerIdentifierTails : '_data';
+    var removeAttributes = opts?.removeAttributes ? opts.removeAttributes : false;
      
     // Let's remove empty top level strings. Also filter out json-variables
     Object.keys(tags).forEach((k) => (tags[k] == '' || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
@@ -132,7 +133,10 @@ class axlService {
             if (result?.hasOwnProperty("return")) {
               var output = result.return;
               if (clean) {
-                output = cleanObj(result.return);
+                cleanObj(output);
+              }
+              if(removeAttributes){
+                cleanAttributes(output);
               }
               resolve(output);
 
@@ -175,6 +179,24 @@ const cleanObj = (object) => {
       (v && typeof v === "object" && !Object.keys(v).length) ||
       v === null ||
       v === undefined
+    ) {
+      if (Array.isArray(object)) {
+        object.splice(k, 1);
+      } else {
+        delete object[k];
+      }
+    }
+  });
+  return object;
+};
+
+const cleanAttributes = (object) => {
+  Object.entries(object).forEach(([k, v]) => {
+    if (v && typeof v === "object") {
+      cleanAttributes(v);
+    }
+    if (
+      (v && typeof v === "object" && 'attributes' in object)
     ) {
       if (Array.isArray(object)) {
         object.splice(k, 1);
