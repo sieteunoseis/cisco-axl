@@ -103,6 +103,7 @@ Current options include:
 | option | type | description |
 | :--------------------------- | :------ | :---------------------------------------------------------------------------------- |
 | clean | boolean | Default: **false**. Allows method to remove all tags that have no values from return data. |
+| removeAttributes | boolean | Default: **false**. Allows method to remove all attributes tags return data. |
 | dataContainerIdentifierTails | string | Default: **'\_data'**. executeOperation will automatically remove any tag with the defined string. This is used with json-variables library. |
 
 Example:
@@ -110,6 +111,7 @@ Example:
 ```node
 var opts = {
   clean: true,
+  removeAttributes: false,
   dataContainerIdentifierTails: "_data",
 };
 ```
