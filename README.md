@@ -40,7 +40,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 ```javascript
 const axlService = require("cisco-axl");
 
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt");
+let service = new axlService("10.10.20.1", "administrator", "ciscopsdt","14.0");
 
 var operation = "addRoutePartition";
 var tags = {

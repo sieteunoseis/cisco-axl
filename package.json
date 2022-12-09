@@ -1,10 +1,14 @@
 {
   "name": "cisco-axl",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "A library to make Cisco AXL a lot easier",
   "main": "index.js",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sieteunoseis/cisco-axl.git"
   },
   "keywords": [
     "cisco",
@@ -16,6 +20,10 @@
   ],
   "author": "Jeremy Worden",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sieteunoseis/cisco-axl/issues"
+  },
+  "homepage": "https://github.com/sieteunoseis/cisco-axl#readme",
   "dependencies": {
     "soap": "^0.45.0",
     "strong-soap": "^3.4.0"
