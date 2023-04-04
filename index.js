@@ -1,6 +1,6 @@
 const soap = require("strong-soap").soap;
 const WSDL = soap.WSDL;
-const path = require('path');
+const path = require("path");
 const wsdlOptions = {
   attributesKey: "attributes",
   valueKey: "value",
@@ -102,14 +102,26 @@ class axlService {
     var options = this._OPTIONS;
 
     var clean = opts?.clean ? opts.clean : false;
-    var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ? opts.dataContainerIdentifierTails : '_data';
-    var removeAttributes = opts?.removeAttributes ? opts.removeAttributes : false;
-     
+    var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails
+      ? opts.dataContainerIdentifierTails
+      : "_data";
+    var removeAttributes = opts?.removeAttributes
+      ? opts.removeAttributes
+      : false;
+
     // Let's remove empty top level strings. Also filter out json-variables
-    Object.keys(tags).forEach((k) => (tags[k] == '' || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
+    Object.keys(tags).forEach(
+      (k) =>
+        (tags[k] == "" || k.includes(dataContainerIdentifierTails)) &&
+        delete tags[k]
+    );
 
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
+        var customRequestHeader = { connection: "keep-alive" };
+        if (err) {
+          reject(err);
+        }
         client.setSecurity(
           new soap.BasicAuthSecurity(options.username, options.password)
         );
@@ -123,10 +135,7 @@ class axlService {
 
         axlFunc(
           tags,
-          function (
-            err,
-            result,
-          ) {
+          function (err, result) {
             if (err) {
               reject(err);
             }
@@ -135,15 +144,16 @@ class axlService {
               if (clean) {
                 cleanObj(output);
               }
-              if(removeAttributes){
+              if (removeAttributes) {
                 cleanAttributes(output);
               }
               resolve(output);
-
             } else {
-              reject('No return results');
+              reject("No return results");
             }
-          }
+          },
+          null,
+          customRequestHeader
         );
       });
     });
@@ -195,9 +205,7 @@ const cleanAttributes = (object) => {
     if (v && typeof v === "object") {
       cleanAttributes(v);
     }
-    if (
-      (v && typeof v === "object" && 'attributes' in object)
-    ) {
+    if (v && typeof v === "object" && "attributes" in object) {
       if (Array.isArray(object)) {
         object.splice(k, 1);
       } else {
