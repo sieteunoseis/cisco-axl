@@ -12,6 +12,11 @@ if(process.env.NODE_ENV === "development"){
   require('dotenv').config({ path: path.join(__dirname, '..', 'env', 'staging.env') })
 }
 
+const versionValid = makeValidator(x => {
+  if (/.*\..*[^\\]/.test(x)) return x.toUpperCase()
+  else throw new Error('CUCM_VERSION must be in the format of ##.#')
+})
+
 const env = cleanEnv(process.env, {
   NODE_ENV: str({
     choices: ["development", "test", "production", "staging"],
@@ -20,7 +25,7 @@ const env = cleanEnv(process.env, {
   CUCM_HOSTNAME: host({ desc: "Cisco CUCM Hostname or IP Address." }),
   CUCM_USERNAME: str({ desc: "Cisco CUCM AXL Username." }),
   CUCM_PASSWORD: str({ desc: "Cisco CUCM AXL Password." }),
-  CUCM_VERSION: str({ desc: "Cisco CUCM Version. i.e. 12.5, or 14.0." }),
+  CUCM_VERSION: versionValid({ desc: "Cisco CUCM Version." , example: "12.5" })
 });
 
 // Set up new AXL service
