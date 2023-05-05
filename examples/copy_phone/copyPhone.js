@@ -1,4 +1,4 @@
-const axlService = require("../../index");
+const axlService = require("../../index"); // Change this to require("cisco-axl") when using outside this package
 
 /*
 Example of how to copy a phone. This is similar to the Super Copy function in CUCM. Just an example of how to do it via AXL.

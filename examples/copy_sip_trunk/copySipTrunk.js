@@ -1,4 +1,4 @@
-const axlService = require("../../index");
+const axlService = require("../../index"); // Change this to require("cisco-axl") when using outside this package
 
 /*
 Example of how to copy a SIP Trunk. Cisco doesn't have a Super Copy option for this, but we can do it via AXL. 

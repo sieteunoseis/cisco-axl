@@ -1,4 +1,4 @@
-const axlService = require("../../../index");
+const axlService = require("../../../index"); // Change this to require("cisco-axl") when using outside this package
 const path = require("path");
 const fs = require("fs");
 

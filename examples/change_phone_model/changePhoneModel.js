@@ -1,4 +1,4 @@
-const axlService = require("../../index");
+const axlService = require("../../index"); // Change this to require("cisco-axl") when using outside this package
 
 /*
 Ever wanted to change a phone model, but keep the existing one in CUCM? This script will attempt to migrate a phone to the new model.

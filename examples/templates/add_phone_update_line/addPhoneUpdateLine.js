@@ -1,5 +1,5 @@
+const axlService = require("../../../index"); // Change this to require("cisco-axl") when using outside this package
 const { jVar } = require("json-variables");
-const axlService = require("../../../index");
 
 /*
 This script using json-variables (https://codsen.com/os/json-variables) to add a new phone from a template. 

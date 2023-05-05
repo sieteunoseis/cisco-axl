@@ -1,5 +1,5 @@
+const axlService = require("../../../index"); // Change this to require("cisco-axl") when using outside this package
 const { jVar } = require("json-variables");
-const axlService = require("../../../index");
 
 /*
 Every wanted to change an exsiting phone from one user to another user? This script will help you do that as well as updating all the display,

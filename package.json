@@ -1,10 +1,10 @@
 {
   "name": "cisco-axl",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "A library to make Cisco AXL a lot easier",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js"
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=test node ./test/tests.js"
   },
   "repository": {
     "type": "git",
@@ -25,11 +25,12 @@
   },
   "homepage": "https://github.com/sieteunoseis/cisco-axl#readme",
   "dependencies": {
-    "soap": "^0.45.0",
-    "strong-soap": "^3.4.3"
+    "strong-soap": "^3.5.0"
   },
   "devDependencies": {
     "json-variables": "^10.1.0",
-    "node-emoji": "^1.11.0"
+    "node-emoji": "*",
+    "dotenv": "*",
+    "envalid": "^7.3.1"
   }
 }
