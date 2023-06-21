@@ -15,6 +15,7 @@ const wsdlOptions = {
  */
 class axlService {
   constructor(host, username, password, version) {
+    if (!host | !username | !password | !version) throw new TypeError("missing parameters");
     this._OPTIONS = {
       username: username,
       password: password,

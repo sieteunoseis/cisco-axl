@@ -1,6 +1,6 @@
 const axlService = require("../index");
 const emoji = require("node-emoji");
-const { cleanEnv, str, host } = require("envalid");
+const { cleanEnv, str, host, makeValidator } = require("envalid");
 var path = require('path');
 
 // If not production load the local env file
