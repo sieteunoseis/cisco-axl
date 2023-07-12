@@ -1,10 +1,13 @@
 {
   "name": "cisco-axl",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A library to make Cisco AXL a lot easier",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=test node ./test/tests.js"
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=test node ./test/tests.js",
+    "development": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development node ./test/tests.js",
+    "staging": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=staging node ./test/tests.js",
+    "wsdl": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=staging node ./test/wsdl.js"
   },
   "repository": {
     "type": "git",
@@ -25,12 +28,12 @@
   },
   "homepage": "https://github.com/sieteunoseis/cisco-axl#readme",
   "dependencies": {
-    "strong-soap": "^3.5.0"
+    "strong-soap": "*"
   },
   "devDependencies": {
     "json-variables": "^10.1.0",
     "node-emoji": "*",
     "dotenv": "*",
-    "envalid": "^7.3.1"
+    "envalid": "*"
   }
 }

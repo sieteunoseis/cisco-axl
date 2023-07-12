@@ -40,9 +40,9 @@ var check = emoji.get("heavy_check_mark");
 var cat = emoji.get("smiley_cat");
 var skull = emoji.get("skull");
 var sparkles = emoji.get("sparkles");
-var spy = emoji.get("sleuth_or_spy");
-var next = emoji.get("black_right_pointing_double_triangle_with_vertical_bar");
-var list = emoji.get("spiral_note_pad");
+var spy = emoji.get("female_detective");
+var next = emoji.get("next_track_button");
+var list = emoji.get("spiral_notepad");
 var computer = emoji.get("computer");
 var finished = emoji.get("raised_hand");
 
