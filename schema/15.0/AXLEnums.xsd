@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <xsd:schema 
-	targetNamespace="http://www.cisco.com/AXL/14.0" 
+	targetNamespace="http://www.cisco.com/AXL/15.0" 
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
-	xmlns:axl="http://www.cisco.com/AXL/14.0" 
+	xmlns:axl="http://www.cisco.com/AXL/15.0" 
 	elementFormDefault="unqualified" 
 	attributeFormDefault="unqualified">
 	
@@ -472,7 +472,7 @@
 			<xsd:enumeration value="Switzerland"/>
 			<xsd:enumeration value="Taiwan"/>
 			<xsd:enumeration value="Thailand"/>
-			<xsd:enumeration value="Turkey"/>
+			<xsd:enumeration value="TÃ¼rkiye"/>
 			<xsd:enumeration value="United Kingdom"/>
 			<xsd:enumeration value="United States"/>
 			<xsd:enumeration value="Venezuela"/>
@@ -1081,6 +1081,15 @@
 			<xsd:enumeration value="VG-2FXS/2FXO-SIP"/>
 			<xsd:enumeration value="VG-4FXS/4FXO-SIP"/>
 			<xsd:enumeration value="VG-6FXS/6FXO-SIP"/>
+			<xsd:enumeration value="VG-24FXS"/>
+			<xsd:enumeration value="VG-24FXS/4FXO"/>
+			<xsd:enumeration value="VG-48FXS"/>
+			<xsd:enumeration value="VG-24FXS-SCCP"/>
+			<xsd:enumeration value="VG-24FXS/4FXO-SCCP"/>
+			<xsd:enumeration value="VG-48FXS-SCCP"/>
+			<xsd:enumeration value="VG-24FXS-SIP"/>
+			<xsd:enumeration value="VG-24FXS/4FXO-SIP"/>
+			<xsd:enumeration value="VG-48FXS-SIP"/>
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="XMRAPolicy">
@@ -1363,6 +1372,14 @@
 			<xsd:enumeration value="Cisco Webex Board Pro 55"/>
 			<xsd:enumeration value="Cisco Webex Board Pro 75"/>
 			<xsd:enumeration value="Cisco Webex Room Bar"/>
+			<xsd:enumeration value="Cisco 8875"/>
+			<xsd:enumeration value="Cisco 8875NR"/>
+			<xsd:enumeration value="Cisco 8851NS"/>
+			<xsd:enumeration value="Cisco 8811NS"/>
+			<xsd:enumeration value="Cisco 8841NS"/>
+			<xsd:enumeration value="Cisco Room Kit EQ"/>
+			<xsd:enumeration value="Cisco Room Bar Pro"/>
+			<xsd:enumeration value="Cisco Room Kit EQX"/>
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="XMonthOfYear">
@@ -1959,6 +1976,15 @@
 			<xsd:enumeration value="Cisco Webex Board Pro 55"/>
 			<xsd:enumeration value="Cisco Webex Board Pro 75"/>
 			<xsd:enumeration value="Cisco Webex Room Bar"/>
+			<xsd:enumeration value="Cisco 8875"/>
+			<xsd:enumeration value="Cisco 8875NR"/>
+			<xsd:enumeration value="Cisco 8851NS"/>
+			<xsd:enumeration value="Cisco 8811NS"/>
+			<xsd:enumeration value="Cisco 8841NS"/>
+			<xsd:enumeration value="Cisco Room Kit EQ"/>
+			<xsd:enumeration value="VG410"/>
+			<xsd:enumeration value="Cisco Room Bar Pro"/>
+			<xsd:enumeration value="Cisco Room Kit EQX"/>
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="XProtocolSide">
@@ -2129,7 +2155,6 @@
 			<xsd:enumeration value="Cisco IP Manager Assistant"/>
 			<xsd:enumeration value="Cisco Extended Functions"/>
 			<xsd:enumeration value="Cisco Serviceability Reporter"/>
-			<xsd:enumeration value="Cisco CTL Provider"/>
 			<xsd:enumeration value="Cisco WebDialer Web Service"/>
 			<xsd:enumeration value="Cisco Dialed Number Analyzer"/>
 			<xsd:enumeration value="Cisco CDR Repository Manager"/>
@@ -2224,6 +2249,8 @@
 			<xsd:enumeration value="Platform Communication Web Service"/>
 			<xsd:enumeration value="Cisco Device Activation Service"/>
 			<xsd:enumeration value="Cisco Headset Service"/>
+			<xsd:enumeration value="Cisco Local Push Notification Service"/>
+			<xsd:enumeration value="Cisco Certificate Expiry Monitor"/>
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:simpleType name="XServiceGrouping">

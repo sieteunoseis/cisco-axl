@@ -9,17 +9,17 @@ const wsdlOptions = {
   xmlKey: 'xml',
 };
 
-WSDL.open(`./schema/current/AXLAPI.wsdl`, wsdlOptions, function (err, wsdl) {
+WSDL.open(`./schema/15.0/AXLAPI.wsdl`, wsdlOptions, function (err, wsdl) {
   if (err) {
-    reject(err);
+    console.log(err);
   }
 
   var operation = wsdl.definitions.bindings.AXLAPIBinding.operations[method];
   var schemas = wsdl.definitions;
-  var schema = wsdl.definitions.schemas['http://www.cisco.com/AXL/API/14.0'];
+  var schema = wsdl.definitions.schemas['http://www.cisco.com/AXL/API/15.0'];
   var operName = operation.$name;
   var part = wsdl.definitions.messages.AXLError.parts;
-  var complexType = schema.complexTypes[method];
+  // var complexType = schema.complexTypes[method];
   var operationDesc = operation.describe(wsdl);
   var requestElements = operationDesc.input.body.elements[0].elements;
 
@@ -33,6 +33,9 @@ WSDL.open(`./schema/current/AXLAPI.wsdl`, wsdlOptions, function (err, wsdl) {
 
 const nestedObj = (object) => {
   object.elements.map((object) => {
-    console.log(object.qname.name);
+    if (object.qname.name === "name"){
+      console.log(object.qname.name);
+      console.log(object);
+    }
   });
 };

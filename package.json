@@ -1,6 +1,6 @@
 {
   "name": "cisco-axl",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "A library to make Cisco AXL a lot easier",
   "main": "index.js",
   "scripts": {
@@ -31,9 +31,9 @@
     "strong-soap": "*"
   },
   "devDependencies": {
-    "json-variables": "^10.1.0",
-    "node-emoji": "*",
     "dotenv": "*",
-    "envalid": "*"
+    "envalid": "^8.0.0",
+    "json-variables": "^10.1.0",
+    "node-emoji": "*"
   }
 }
