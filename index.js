@@ -28,22 +28,17 @@ class axlService {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
-        client.setSecurity(
-          new soap.BasicAuthSecurity(options.username, options.password)
-        );
+        client.setSecurity(new soap.BasicAuthSecurity(options.username, options.password));
         client.setEndpoint(options.endpoint);
 
         var description = client.describe();
 
         var outputArr = [];
 
-        for (const [key, value] of Object.entries(
-          description.AXLAPIService.AXLPort
-        )) {
+        for (const [key, value] of Object.entries(description.AXLAPIService.AXLPort)) {
           outputArr.push(value.name);
         }
-        const sortAlphaNum = (a, b) =>
-          a.localeCompare(b, "en", { numeric: true });
+        const sortAlphaNum = (a, b) => a.localeCompare(b, "en", { numeric: true });
         const matches = (substring, array) =>
           array.filter((element) => {
             if (element.toLowerCase().includes(substring.toLowerCase())) {
@@ -66,56 +61,43 @@ class axlService {
   getOperationTags(operation) {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
-      WSDL.open(
-        path.join(__dirname, `/schema/${options.version}/AXLAPI.wsdl`),
-        wsdlOptions,
-        function (err, wsdl) {
-          if (err) {
-            reject(err);
-          }
-          var operationDef =
-            wsdl.definitions.bindings.AXLAPIBinding.operations[operation];
-          var operName = operationDef.$name;
-          var operationDesc = operationDef.describe(wsdl);
-          var envelopeBody = {};
-          operationDesc.input.body.elements.map((object) => {
-            var operMatch = new RegExp(object.qname.name, "i");
-            envelopeBody[object.qname.name] = "";
-            if (object.qname.name === "searchCriteria") {
-              let output = nestedObj(object);
-              envelopeBody.searchCriteria = output;
-            }
-            if (object.qname.name === "returnedTags") {
-              let output = nestedObj(object);
-              envelopeBody.returnedTags = output;
-            }
-            if (operName.match(operMatch)) {
-              let output = nestedObj(object);
-              envelopeBody[object.qname.name] = output;
-            }
-          });
-          resolve(envelopeBody);
+      WSDL.open(path.join(__dirname, `/schema/${options.version}/AXLAPI.wsdl`), wsdlOptions, function (err, wsdl) {
+        if (err) {
+          reject(err);
         }
-      );
+        var operationDef = wsdl.definitions.bindings.AXLAPIBinding.operations[operation];
+        var operName = operationDef.$name;
+        var operationDesc = operationDef.describe(wsdl);
+        var envelopeBody = {};
+        operationDesc.input.body.elements.map((object) => {
+          var operMatch = new RegExp(object.qname.name, "i");
+          envelopeBody[object.qname.name] = "";
+          if (object.qname.name === "searchCriteria") {
+            let output = nestedObj(object);
+            envelopeBody.searchCriteria = output;
+          }
+          if (object.qname.name === "returnedTags") {
+            let output = nestedObj(object);
+            envelopeBody.returnedTags = output;
+          }
+          if (operName.match(operMatch)) {
+            let output = nestedObj(object);
+            envelopeBody[object.qname.name] = output;
+          }
+        });
+        resolve(envelopeBody);
+      });
     });
   }
   executeOperation(operation, tags, opts) {
     var options = this._OPTIONS;
 
     var clean = opts?.clean ? opts.clean : false;
-    var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails
-      ? opts.dataContainerIdentifierTails
-      : "_data";
-    var removeAttributes = opts?.removeAttributes
-      ? opts.removeAttributes
-      : false;
+    var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ? opts.dataContainerIdentifierTails : "_data";
+    var removeAttributes = opts?.removeAttributes ? opts.removeAttributes : false;
 
     // Let's remove empty top level strings. Also filter out json-variables
-    Object.keys(tags).forEach(
-      (k) =>
-        (tags[k] == "" || k.includes(dataContainerIdentifierTails)) &&
-        delete tags[k]
-    );
+    Object.keys(tags).forEach((k) => (tags[k] == "" || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
 
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
@@ -123,9 +105,7 @@ class axlService {
         if (err) {
           reject(err);
         }
-        client.setSecurity(
-          new soap.BasicAuthSecurity(options.username, options.password)
-        );
+        client.setSecurity(new soap.BasicAuthSecurity(options.username, options.password));
         client.setEndpoint(options.endpoint);
 
         client.on("soapError", function (err) {
@@ -186,11 +166,7 @@ const cleanObj = (object) => {
     if (v && typeof v === "object") {
       cleanObj(v);
     }
-    if (
-      (v && typeof v === "object" && !Object.keys(v).length) ||
-      v === null ||
-      v === undefined
-    ) {
+    if ((v && typeof v === "object" && !Object.keys(v).length) || v === null || v === undefined) {
       if (Array.isArray(object)) {
         object.splice(k, 1);
       } else {
