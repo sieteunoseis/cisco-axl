@@ -34,6 +34,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 - Supports the Promise API. Can chain procedures together or you could use Promise.all() to run multiple "get" operations at the same time.
 - Returns all results in JSON rather than XML. Function has options to remove all blank or empty fields from JSON results via optional clean parameter.
 - Support for [json-variables](https://codsen.com/os/json-variables). The executeOperation function will recognize the dataContainerIdentifierTails from json-variables and remove them from your call. This avoids any SOAP fault issues from having extra information in call. See examples folder for use case.
+- TypeScript support with type definitions for better developer experience and code reliability
 
 ## Usage
 
@@ -183,6 +184,39 @@ service.executeOperation("updateLine", lineTags,{ dataContainerIdentifierTails: 
 ## Limitations
 
 Currently there is an issue with strong-soap regarding returning nillable values for element tags. These values show if a particular tags is optional or not. Once resolved a method will be added to return tags nillable status (true or false).
+
+## TypeScript Support
+
+This library includes TypeScript declarations to provide type safety and improved developer experience.
+
+### TypeScript Usage
+
+```typescript
+import axlService from 'cisco-axl';
+
+const service = new axlService(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  "14.0"
+);
+
+async function getPartitions() {
+  try {
+    const operation = "listRoutePartition";
+    const tags = await service.getOperationTags(operation);
+    tags.searchCriteria.name = "%%";
+    
+    const result = await service.executeOperation(operation, tags);
+    return result.routePartition;
+  } catch (error) {
+    console.error("Error fetching partitions:", error);
+    throw error;
+  }
+}
+```
+
+See the `examples/typescript` directory for more TypeScript examples.
 
 ## TODO
 

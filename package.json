@@ -2,12 +2,17 @@
   "name": "cisco-axl",
   "version": "1.2.6",
   "description": "A library to make Cisco AXL a lot easier",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
     "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=test node ./test/tests.js",
     "development": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development node ./test/tests.js",
     "staging": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=staging node ./test/tests.js",
-    "wsdl": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=staging node ./test/wsdl.js"
+    "wsdl": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=staging node ./test/wsdl.js",
+    "type-check": "tsc --noEmit",
+    "ts-example": "ts-node examples/typescript/example.ts"
   },
   "repository": {
     "type": "git",
@@ -31,9 +36,12 @@
     "strong-soap": "^4.1.5"
   },
   "devDependencies": {
+    "@types/node": "^22.13.5",
     "dotenv": "*",
     "envalid": "*",
     "json-variables": "^10.1.0",
-    "node-emoji": "*"
+    "node-emoji": "*",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
   }
 }
