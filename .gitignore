@@ -2,5 +2,6 @@
 /node_modules
 .env
 /env
+/dist
 CLAUDE.md
 FUTURE_IMPROVEMENTS.md
