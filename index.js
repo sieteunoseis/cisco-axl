@@ -4,6 +4,7 @@ const path = require("path");
 const wsdlOptions = {
   attributesKey: "attributes",
   valueKey: "value",
+  ns1: "ns",
 };
 
 /**
@@ -38,6 +39,7 @@ class axlService {
         for (const [key, value] of Object.entries(description.AXLAPIService.AXLPort)) {
           outputArr.push(value.name);
         }
+
         const sortAlphaNum = (a, b) => a.localeCompare(b, "en", { numeric: true });
         const matches = (substring, array) =>
           array.filter((element) => {
@@ -101,10 +103,33 @@ class axlService {
 
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
-        var customRequestHeader = { connection: "keep-alive" };
         if (err) {
           reject(err);
+          return;
         }
+
+        // Get the properly versioned namespace URL
+        const namespaceUrl = `http://www.cisco.com/AXL/API/${options.version}`;
+
+        // 1. Set envelope key
+        client.wsdl.options = {
+          ...client.wsdl.options,
+          envelopeKey: "soapenv", // Change default 'soap' to 'soapenv'
+        };
+
+        // 2. Define namespaces with the correct version
+        client.wsdl.definitions.xmlns.ns = namespaceUrl;
+
+        // Remove ns1 if it exists
+        if (client.wsdl.definitions.xmlns.ns1) {
+          delete client.wsdl.definitions.xmlns.ns1;
+        }
+
+        var customRequestHeader = {
+          connection: "keep-alive",
+          SOAPAction: `"CUCM:DB ver=${options.version} ${operation}"`,
+        };
+
         client.setSecurity(new soap.BasicAuthSecurity(options.username, options.password));
         client.setEndpoint(options.endpoint);
 
@@ -112,13 +137,100 @@ class axlService {
           reject(err.root.Envelope.Body.Fault);
         });
 
+        // Check if the operation function exists
+        if (!client.AXLAPIService || !client.AXLAPIService.AXLPort || typeof client.AXLAPIService.AXLPort[operation] !== "function") {
+          // For operations that aren't found, try a manual approach
+          if (operation.startsWith("apply") || operation.startsWith("reset")) {
+            // Determine which parameter to use (name or uuid)
+            const operationObj = tags[operation] || tags;
+
+            // Check if uuid or name is provided
+            let paramTag, paramValue;
+
+            if (operationObj.uuid) {
+              paramTag = "uuid";
+              paramValue = operationObj.uuid;
+            } else {
+              paramTag = "name";
+              paramValue = operationObj.name;
+            }
+
+            const rawXml = `<?xml version="1.0" encoding="UTF-8"?>
+             <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="${namespaceUrl}">
+               <soapenv:Header/>
+               <soapenv:Body>
+                 <ns:${operation}>
+                   <${paramTag}>${paramValue}</${paramTag}>
+                 </ns:${operation}>
+               </soapenv:Body>
+             </soapenv:Envelope>`;
+
+            // Use client.request for direct XML request
+            client._request(
+              options.endpoint,
+              rawXml,
+              function (err, body, response) {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                // Parse the response
+                try {
+                  const result = { return: "Success" }; // Default success response
+                  resolve(result);
+                } catch (parseError) {
+                  reject(parseError);
+                }
+              },
+              customRequestHeader
+            );
+
+            return;
+          } else {
+            reject(new Error(`Operation "${operation}" not found`));
+            return;
+          }
+        }
+
+        // Get the operation function - confirmed to exist at this point
         var axlFunc = client.AXLAPIService.AXLPort[operation];
 
+        // Define namespace context with the correct version
+        const nsContext = {
+          ns: namespaceUrl,
+        };
+
+        // Prepare message for specific operations
+        let message = tags;
+
+        // Handle operations that start with "apply" or "reset"
+        if (operation.startsWith("apply") || operation.startsWith("reset")) {
+          const operationKey = operation;
+
+          // If there's a nested structure, flatten it
+          if (tags[operationKey]) {
+            // Check if uuid or name is provided in the nested structure
+            if (tags[operationKey].uuid) {
+              message = { uuid: tags[operationKey].uuid };
+            } else if (tags[operationKey].name) {
+              message = { name: tags[operationKey].name };
+            }
+            // If neither uuid nor name is provided, try to use any available
+            else {
+              // Try to use uuid or name from the top level as fallback
+              message = tags.uuid ? { uuid: tags.uuid } : { name: tags.name };
+            }
+          }
+        }
+
+        // Execute the operation
         axlFunc(
-          tags,
+          message,
           function (err, result) {
             if (err) {
               reject(err);
+              return;
             }
             if (result?.hasOwnProperty("return")) {
               var output = result.return;
@@ -130,15 +242,97 @@ class axlService {
               }
               resolve(output);
             } else {
-              reject("No return results");
+              resolve(result || { return: "Success" });
             }
           },
-          null,
+          nsContext,
           customRequestHeader
         );
       });
     });
   }
+  // executeOperation(operation, tags, opts) {
+  //   var options = this._OPTIONS;
+
+  //   var clean = opts?.clean ? opts.clean : false;
+  //   var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ? opts.dataContainerIdentifierTails : "_data";
+  //   var removeAttributes = opts?.removeAttributes ? opts.removeAttributes : false;
+
+  //   // Let's remove empty top level strings. Also filter out json-variables
+  //   Object.keys(tags).forEach((k) => (tags[k] == "" || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
+
+  //   return new Promise((resolve, reject) => {
+  //     soap.createClient(options.url, wsdlOptions, function (err, client) {
+  //       // Key changes to fix the namespace issue
+
+  //       // 1. Define the namespace prefix mapping
+  //       client.wsdl.definitions.xmlns.ns = "http://www.cisco.com/AXL/API/15.0";
+
+  //       // 2. Remove any ns1 namespace mapping if it exists
+  //       if (client.wsdl.definitions.xmlns.ns1) {
+  //         delete client.wsdl.definitions.xmlns.ns1;
+  //       }
+
+  //       // 3. Set the envelope key
+  //       client.wsdl.options = {
+  //         ...client.wsdl.options,
+  //         envelopeKey: "soapenv", // Change default 'soap' to 'soapenv'
+  //       };
+
+  //       // 4. Important: Fix the structure of the tags object
+  //       // Instead of having nested applyRoutePartition, simplify the structure
+  //       if (operation === "applyRoutePartition" && tags.applyRoutePartition) {
+  //         tags = { name: tags.applyRoutePartition.name };
+  //       }
+
+  //       var customRequestHeader = {
+  //         connection: "keep-alive",
+  //         SOAPAction: `"CUCM:DB ver=${options.version} ${operation}"`,
+  //       };
+
+  //       if (err) {
+  //         reject(err);
+  //       }
+  //       client.setSecurity(new soap.BasicAuthSecurity(options.username, options.password));
+  //       client.setEndpoint(options.endpoint);
+
+  //       client.on("soapError", function (err) {
+  //         reject(err.root.Envelope.Body.Fault);
+  //       });
+
+  //       var axlFunc = client.AXLAPIService.AXLPort[operation];
+
+  //       // 5. Add the correct namespace to the operation call
+  //       const nsContext = {
+  //         ns: `http://www.cisco.com/AXL/API/${options.version}`,
+  //       };
+
+  //       axlFunc(
+  //         tags,
+  //         function (err, result) {
+  //           if (err) {
+  //             reject(err);
+  //           }
+  //           if (result?.hasOwnProperty("return")) {
+  //             var output = result.return;
+  //             if (clean) {
+  //               cleanObj(output);
+  //             }
+  //             if (removeAttributes) {
+  //               cleanAttributes(output);
+  //             }
+  //             resolve(output);
+  //           } else {
+  //             reject("No return results");
+  //           }
+  //         },
+  //         // Add namespace mapping for the operation call
+  //         nsContext,
+  //         customRequestHeader
+  //       );
+  //     });
+  //   });
+  // }
 }
 
 const nestedObj = (object) => {

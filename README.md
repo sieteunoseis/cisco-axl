@@ -222,7 +222,7 @@ See the `examples/typescript` directory for more TypeScript examples.
 
 - Add more promised based examples, particularly a Promise.All() example.
 - Add example for reading in CSV and performing a bulk exercise with variables.
-- Add example for saving SQL output to CSV or uploading to cloud (Airtable or SmartSheets).
+- Add example for saving SQL output to CSV.
 
 ## Giving Back
 

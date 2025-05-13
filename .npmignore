@@ -1,0 +1,12 @@
+# Development files
+/.DS_Store
+/node_modules
+.env
+/env
+/test
+/examples
+CLAUDE.md
+FUTURE_IMPROVEMENTS.md
+
+# Do not ignore dist directory for npm
+!/dist
