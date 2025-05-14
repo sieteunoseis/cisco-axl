@@ -1,6 +1,9 @@
 const soap = require("strong-soap").soap;
 const WSDL = soap.WSDL;
 const path = require("path");
+const https = require("https");
+const { URL } = require("url");
+
 const wsdlOptions = {
   attributesKey: "attributes",
   valueKey: "value",
@@ -8,15 +11,35 @@ const wsdlOptions = {
 };
 
 /**
+ * Helper function to log debug messages only when DEBUG environment variable is set
+ * @param {string} message - The message to log
+ * @param {any} [data] - Optional data to log
+ */
+const debugLog = (message, data) => {
+  // Get the DEBUG value, handling case-insensitivity
+  const debug = process.env.DEBUG;
+
+  // Check if DEBUG is set and is a truthy value (not 'false', 'no', '0', etc.)
+  const isDebugEnabled = debug && !["false", "no", "0", "off", "n"].includes(debug.toLowerCase());
+
+  if (isDebugEnabled) {
+    if (data) {
+      console.log(`[AXL DEBUG] ${message}`, data);
+    } else {
+      console.log(`[AXL DEBUG] ${message}`);
+    }
+  }
+};
+
+/**
  * Cisco axlService Service
  * This is a service class that uses fetch and promises to pull AXL data from Cisco CUCM
- *
  *
  * @class axlService
  */
 class axlService {
   constructor(host, username, password, version) {
-    if (!host | !username | !password | !version) throw new TypeError("missing parameters");
+    if (!host || !username || !password || !version) throw new TypeError("missing parameters");
     this._OPTIONS = {
       username: username,
       password: password,
@@ -25,10 +48,100 @@ class axlService {
       version: version,
     };
   }
+
+  /**
+   * Test authentication credentials against the AXL endpoint
+   * @returns {Promise<boolean>} - Resolves to true if authentication is successful
+   */
+  async testAuthentication() {
+    try {
+      const authSuccess = await this._testAuthenticationDirectly();
+      if (!authSuccess) {
+        throw new Error("Authentication failed. Check username and password.");
+      }
+      return true;
+    } catch (error) {
+      throw new Error(`Authentication test failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Private method to test authentication using a simple GET request to the AXL endpoint
+   * @returns {Promise<boolean>} - Resolves with true if authentication successful, false otherwise
+   * @private
+   */
+  async _testAuthenticationDirectly() {
+    const options = this._OPTIONS;
+    const url = new URL(options.endpoint);
+
+    return new Promise((resolve) => {
+      const authHeader = "Basic " + Buffer.from(`${options.username}:${options.password}`).toString("base64");
+
+      const reqOptions = {
+        hostname: url.hostname,
+        port: url.port || 8443,
+        path: url.pathname,
+        method: "GET", // Simply use GET instead of POST
+        headers: {
+          Authorization: authHeader,
+          Connection: "keep-alive",
+        },
+        rejectUnauthorized: false, // For self-signed certificates
+      };
+
+      debugLog(`Testing authentication to ${url.hostname}:${url.port || 8443}${url.pathname}`);
+
+      const req = https.request(reqOptions, (res) => {
+        debugLog(`Authentication test response status: ${res.statusCode}`);
+
+        // Check status code for authentication failures
+        if (res.statusCode === 401 || res.statusCode === 403) {
+          debugLog("Authentication failed: Unauthorized status code");
+          resolve(false); // Authentication failed
+          return;
+        }
+
+        let responseData = "";
+
+        res.on("data", (chunk) => {
+          responseData += chunk;
+        });
+
+        res.on("end", () => {
+          // Check for the expected success message
+          const successIndicator = "Cisco CallManager: AXL Web Service";
+          if (responseData.includes(successIndicator)) {
+            debugLog("Authentication succeeded: Found success message");
+            resolve(true); // Authentication succeeded
+          } else if (responseData.includes("Authentication failed") || responseData.includes("401 Unauthorized") || responseData.includes("403 Forbidden")) {
+            debugLog("Authentication failed: Found failure message in response");
+            resolve(false); // Authentication failed
+          } else {
+            debugLog("Authentication status uncertain, response did not contain expected messages");
+            // If we're not sure, assume it failed to be safe
+            resolve(false);
+          }
+        });
+      });
+
+      req.on("error", (error) => {
+        console.error("Authentication test error:", error.message);
+        resolve(false);
+      });
+
+      // Since it's a GET request, we just end it without writing any data
+      req.end();
+    });
+  }
+
   returnOperations(filter) {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
       soap.createClient(options.url, wsdlOptions, function (err, client) {
+        if (err) {
+          reject(err);
+          return;
+        }
         client.setSecurity(new soap.BasicAuthSecurity(options.username, options.password));
         client.setEndpoint(options.endpoint);
 
@@ -60,6 +173,7 @@ class axlService {
       });
     });
   }
+
   getOperationTags(operation) {
     var options = this._OPTIONS;
     return new Promise((resolve, reject) => {
@@ -91,12 +205,28 @@ class axlService {
       });
     });
   }
-  executeOperation(operation, tags, opts) {
-    var options = this._OPTIONS;
 
-    var clean = opts?.clean ? opts.clean : false;
-    var dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ? opts.dataContainerIdentifierTails : "_data";
-    var removeAttributes = opts?.removeAttributes ? opts.removeAttributes : false;
+  /**
+   * Executes an AXL operation against the CUCM
+   * @param {string} operation - The AXL operation to execute
+   * @param {Object} tags - The tags required for the operation
+   * @param {Object} [opts] - Optional parameters for customizing the operation
+   * @returns {Promise<any>} - Result of the operation
+   */
+  async executeOperation(operation, tags, opts) {
+    const options = this._OPTIONS;
+
+    // First test authentication
+    debugLog(`Testing authentication before executing operation: ${operation}`);
+    const authSuccess = await this._testAuthenticationDirectly();
+    if (!authSuccess) {
+      throw new Error("Authentication failed. Check username and password.");
+    }
+    debugLog("Authentication successful, proceeding with operation");
+
+    const clean = opts?.clean ?? false;
+    const dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ?? "_data";
+    const removeAttributes = opts?.removeAttributes ?? false;
 
     // Let's remove empty top level strings. Also filter out json-variables
     Object.keys(tags).forEach((k) => (tags[k] == "" || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
@@ -134,7 +264,19 @@ class axlService {
         client.setEndpoint(options.endpoint);
 
         client.on("soapError", function (err) {
-          reject(err.root.Envelope.Body.Fault);
+          // Check if this is an authentication error
+          if (err.root?.Envelope?.Body?.Fault) {
+            const fault = err.root.Envelope.Body.Fault;
+            const faultString = fault.faultstring || fault.faultString || "";
+
+            if (typeof faultString === "string" && (faultString.includes("Authentication failed") || faultString.includes("credentials") || faultString.includes("authorize"))) {
+              reject(new Error("Authentication failed. Check username and password."));
+            } else {
+              reject(fault);
+            }
+          } else {
+            reject(err);
+          }
         });
 
         // Check if the operation function exists
@@ -143,7 +285,6 @@ class axlService {
           if (operation.startsWith("apply") || operation.startsWith("reset")) {
             // Determine which parameter to use (name or uuid)
             const operationObj = tags[operation] || tags;
-
             // Check if uuid or name is provided
             let paramTag, paramValue;
 
@@ -165,6 +306,8 @@ class axlService {
                </soapenv:Body>
              </soapenv:Envelope>`;
 
+            debugLog(`Executing manual XML request for operation: ${operation}`);
+
             // Use client.request for direct XML request
             client._request(
               options.endpoint,
@@ -175,10 +318,38 @@ class axlService {
                   return;
                 }
 
+                // Check for authentication failures in the response
+                if (response && (response.statusCode === 401 || response.statusCode === 403)) {
+                  reject(new Error("Authentication failed. Check username and password."));
+                  return;
+                }
+
+                if (body && typeof body === "string" && (body.includes("Authentication failed") || body.includes("401 Unauthorized") || body.includes("403 Forbidden"))) {
+                  reject(new Error("Authentication failed. Check username and password."));
+                  return;
+                }
+
                 // Parse the response
                 try {
-                  const result = { return: "Success" }; // Default success response
-                  resolve(result);
+                  // Don't automatically assume success
+                  if (body && body.includes("Fault")) {
+                    // Try to extract the fault message
+                    const faultMatch = /<faultstring>(.*?)<\/faultstring>/;
+                    const match = body.match(faultMatch);
+                    if (match && match[1]) {
+                      const faultString = match[1];
+                      if (faultString.includes("Authentication failed") || faultString.includes("credentials") || faultString.includes("authorize")) {
+                        reject(new Error("Authentication failed. Check username and password."));
+                      } else {
+                        reject(new Error(faultString));
+                      }
+                    } else {
+                      reject(new Error("Unknown SOAP fault occurred"));
+                    }
+                  } else {
+                    const result = { return: "Success" }; // Only report success if no errors found
+                    resolve(result);
+                  }
                 } catch (parseError) {
                   reject(parseError);
                 }
@@ -224,14 +395,35 @@ class axlService {
           }
         }
 
+        debugLog(`Executing operation: ${operation}`);
+
         // Execute the operation
         axlFunc(
           message,
-          function (err, result) {
+          function (err, result, rawResponse, soapHeader, rawRequest) {
             if (err) {
+              // Check if this is an authentication error
+              if (err.message && (err.message.includes("Authentication failed") || err.message.includes("401 Unauthorized") || err.message.includes("403 Forbidden") || err.message.includes("credentials"))) {
+                reject(new Error("Authentication failed. Check username and password."));
+                return;
+              }
+
+              // Check if the error response indicates authentication failure
+              if (err.response && (err.response.statusCode === 401 || err.response.statusCode === 403)) {
+                reject(new Error("Authentication failed. Check username and password."));
+                return;
+              }
+
               reject(err);
               return;
             }
+
+            // Check the raw response for auth failures (belt and suspenders approach)
+            if (rawResponse && typeof rawResponse === "string" && (rawResponse.includes("Authentication failed") || rawResponse.includes("401 Unauthorized") || rawResponse.includes("403 Forbidden"))) {
+              reject(new Error("Authentication failed. Check username and password."));
+              return;
+            }
+
             if (result?.hasOwnProperty("return")) {
               var output = result.return;
               if (clean) {
