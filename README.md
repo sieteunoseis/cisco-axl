@@ -28,6 +28,21 @@ NODE_NO_WARNINGS=1
 NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
+### Debugging
+
+You can enable debug logging by setting the `DEBUG` environment variable to any truthy value (except 'false', 'no', '0', 'off', or 'n'). When enabled, debug logs will show detailed information about authentication tests and operations being executed.
+
+```env
+DEBUG=true
+```
+
+Debug logs will be prefixed with `[AXL DEBUG]` and include information such as:
+- Authentication test attempts and responses
+- Operations being executed
+- API responses
+
+This is especially helpful when troubleshooting authentication issues or unexpected API behavior.
+
 ## Features
 
 - This library uses strong-soap to parse the AXL WSDL file. As a result any AXL function for your specified version is avaliable to use!
@@ -35,6 +50,8 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 - Returns all results in JSON rather than XML. Function has options to remove all blank or empty fields from JSON results via optional clean parameter.
 - Support for [json-variables](https://codsen.com/os/json-variables). The executeOperation function will recognize the dataContainerIdentifierTails from json-variables and remove them from your call. This avoids any SOAP fault issues from having extra information in call. See examples folder for use case.
 - TypeScript support with type definitions for better developer experience and code reliability
+- Authentication testing with the testAuthentication method to verify credentials before executing operations
+- Debug logging capabilities to help troubleshoot API interactions by setting the DEBUG environment variable
 
 ## Usage
 
@@ -68,6 +85,7 @@ service
 ## Methods
 
 - new axlService(options: obj)
+- axlService.testAuthentication()
 - axlService.returnOperations(filter?: string)
 - axlService.getOperationTags(operation: string)
 - axlService.executeOperation(operation: string,tags: obj, opts?: obj)
@@ -78,6 +96,20 @@ Service constructor for methods. Requires a JSON object consisting of hostname, 
 
 ```node
 let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
+```
+
+### service.testAuthentication() ⇒ Returns promise
+
+Tests the authentication credentials against the AXL endpoint. Returns a promise that resolves to `true` if authentication is successful, or rejects with an error if authentication fails.
+
+```node
+service.testAuthentication()
+  .then((success) => {
+    console.log('Authentication successful');
+  })
+  .catch((error) => {
+    console.error('Authentication failed:', error.message);
+  });
 ```
 
 ### service.returnOperations(filter?) ⇒ Returns promise

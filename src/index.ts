@@ -72,6 +72,7 @@ class axlService {
       endpoint: `https://${host}:8443/axl/`,
       version: version,
     };
+    debugLog(`Initializing AXL service for host: ${host}, version: ${version}`);
   }
 
   /**
@@ -169,10 +170,13 @@ class axlService {
    * @memberof axlService
    */
   returnOperations(filter?: string): Promise<string[]> {
+    debugLog(`Getting available operations${filter ? ` with filter: ${filter}` : ''}`);
     const options = this._OPTIONS;
     return new Promise((resolve, reject) => {
+      debugLog(`Creating SOAP client for ${options.url}`);
       soap.soap.createClient(options.url, wsdlOptions, function (err: any, client: any) {
         if (err) {
+          debugLog(`SOAP error occurred: ${err.message || 'Unknown error'}`, err);
           reject(err);
           return;
         }
@@ -216,10 +220,14 @@ class axlService {
    * @memberof axlService
    */
   getOperationTags(operation: string): Promise<any> {
+    debugLog(`Getting tags for operation: ${operation}`);
     const options = this._OPTIONS;
     return new Promise((resolve, reject) => {
-      WSDL.open(path.join(__dirname, `../schema/${options.version}/AXLAPI.wsdl`), wsdlOptions, function (err: any, wsdl: any) {
+      const wsdlPath = path.join(__dirname, `../schema/${options.version}/AXLAPI.wsdl`);
+      debugLog(`Opening WSDL file: ${wsdlPath}`);
+      WSDL.open(wsdlPath, wsdlOptions, function (err: any, wsdl: any) {
         if (err) {
+          debugLog(`WSDL error occurred: ${err.message || 'Unknown error'}`, err);
           reject(err);
           return;
         }
@@ -262,12 +270,14 @@ class axlService {
    * @memberof axlService
    */
   async executeOperation(operation: string, tags: any, opts?: OperationOptions): Promise<any> {
+    debugLog(`Preparing to execute operation: ${operation}`);
     const options = this._OPTIONS;
 
     // First test authentication
     debugLog(`Testing authentication before executing operation: ${operation}`);
     const authSuccess = await this._testAuthenticationDirectly();
     if (!authSuccess) {
+      debugLog(`Authentication failed for operation: ${operation}`);
       throw new Error("Authentication failed. Check username and password.");
     }
     debugLog('Authentication successful, proceeding with operation');
@@ -277,29 +287,41 @@ class axlService {
     const removeAttributes = opts?.removeAttributes ?? false;
 
     // Let's remove empty top level strings. Also filter out json-variables
-    Object.keys(tags).forEach((k) => (tags[k] === "" || k.includes(dataContainerIdentifierTails)) && delete tags[k]);
+    debugLog("Cleaning input tags from empty values and json-variables");
+    Object.keys(tags).forEach((k) => {
+      if (tags[k] === "" || k.includes(dataContainerIdentifierTails)) {
+        debugLog(`Removing tag: ${k}`);
+        delete tags[k];
+      }
+    });
 
     return new Promise((resolve, reject) => {
+      debugLog(`Creating SOAP client for operation: ${operation}`);
       soap.soap.createClient(options.url, wsdlOptions, function (err: any, client: any) {
         if (err) {
+          debugLog(`SOAP client creation error: ${err.message || 'Unknown error'}`, err);
           reject(err);
           return;
         }
 
         // Get the properly versioned namespace URL
         const namespaceUrl = `http://www.cisco.com/AXL/API/${options.version}`;
+        debugLog(`Using AXL namespace: ${namespaceUrl}`);
 
         // 1. Set envelope key
+        debugLog("Setting envelope key to 'soapenv'");
         client.wsdl.options = {
           ...client.wsdl.options,
           envelopeKey: "soapenv", // Change default 'soap' to 'soapenv'
         };
 
         // 2. Define namespaces with the correct version
+        debugLog(`Setting namespace 'ns' to: ${namespaceUrl}`);
         client.wsdl.definitions.xmlns.ns = namespaceUrl;
 
         // Remove ns1 if it exists
         if (client.wsdl.definitions.xmlns.ns1) {
+          debugLog("Removing 'ns1' namespace");
           delete client.wsdl.definitions.xmlns.ns1;
         }
 
@@ -312,40 +334,49 @@ class axlService {
         client.setEndpoint(options.endpoint);
 
         client.on("soapError", function (err: any) {
+          debugLog("SOAP error event triggered");
           // Check if this is an authentication error
           if (err.root?.Envelope?.Body?.Fault) {
             const fault = err.root.Envelope.Body.Fault;
             const faultString = fault.faultstring || fault.faultString || '';
+            debugLog(`SOAP fault detected: ${faultString}`, fault);
             
             if (typeof faultString === 'string' && 
                 (faultString.includes('Authentication failed') || 
                  faultString.includes('credentials') ||
                  faultString.includes('authorize'))) {
+              debugLog("Authentication error detected in SOAP fault");
               reject(new Error("Authentication failed. Check username and password."));
             } else {
+              debugLog("Non-authentication SOAP fault");
               reject(fault);
             }
           } else {
+            debugLog("Unstructured SOAP error", err);
             reject(err);
           }
         });
 
         // Check if the operation function exists
         if (!client.AXLAPIService || !client.AXLAPIService.AXLPort || typeof client.AXLAPIService.AXLPort[operation] !== "function") {
+          debugLog(`Operation '${operation}' not found in AXL API, attempting alternative approach`);
           // For operations that aren't found, try a manual approach
           if (operation.startsWith("apply") || operation.startsWith("reset")) {
+            debugLog(`Using manual XML approach for ${operation} operation`);
             // Determine which parameter to use (name or uuid)
             const operationObj = tags[operation] || tags;
 
             // Check if uuid or name is provided
-            let paramTag, paramValue;
+            let paramTag: string, paramValue: string;
 
             if (operationObj.uuid) {
               paramTag = "uuid";
               paramValue = operationObj.uuid;
+              debugLog(`Using uuid parameter: ${paramValue}`);
             } else {
               paramTag = "name";
               paramValue = operationObj.name;
+              debugLog(`Using name parameter: ${paramValue}`);
             }
 
             const rawXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -361,17 +392,20 @@ class axlService {
             debugLog(`Executing manual XML request for operation: ${operation}`);
             
             // Use client.request for direct XML request
+            debugLog(`Sending manual XML request to ${options.endpoint}`, { operation, paramTag, paramValue });
             (client as any)._request(
               options.endpoint,
               rawXml,
               function (err: any, body: any, response: any) {
                 if (err) {
+                  debugLog(`Error in manual XML request: ${err.message || 'Unknown error'}`, err);
                   reject(err);
                   return;
                 }
                 
                 // Check for authentication failures in the response
                 if (response && (response.statusCode === 401 || response.statusCode === 403)) {
+                  debugLog(`Authentication failed in manual request. Status code: ${response.statusCode}`);
                   reject(new Error("Authentication failed. Check username and password."));
                   return;
                 }
@@ -380,34 +414,45 @@ class axlService {
                     (body.includes('Authentication failed') || 
                      body.includes('401 Unauthorized') || 
                      body.includes('403 Forbidden'))) {
+                  debugLog(`Authentication failed in manual request. Found auth failure text in body.`);
                   reject(new Error("Authentication failed. Check username and password."));
                   return;
                 }
+                
+                debugLog(`Manual XML request response received. Size: ${body ? body.length : 0} bytes`);
+                
                 
                 // Parse the response
                 try {
                   // Don't automatically assume success
                   if (body && body.includes('Fault')) {
+                    debugLog("Fault detected in manual XML response");
                     // Try to extract the fault message
                     const faultMatch = /<faultstring>(.*?)<\/faultstring>/;
                     const match = body.match(faultMatch);
                     if (match && match[1]) {
                       const faultString = match[1];
+                      debugLog(`Extracted fault string: ${faultString}`);
                       if (faultString.includes('Authentication failed') || 
                           faultString.includes('credentials') ||
                           faultString.includes('authorize')) {
+                        debugLog("Authentication failure detected in fault string");
                         reject(new Error("Authentication failed. Check username and password."));
                       } else {
+                        debugLog(`Operation failed with fault: ${faultString}`);
                         reject(new Error(faultString));
                       }
                     } else {
+                      debugLog("Unknown SOAP fault format, couldn't extract fault string");
                       reject(new Error('Unknown SOAP fault occurred'));
                     }
                   } else {
+                    debugLog(`Operation ${operation} completed successfully via manual XML`);
                     const result = { return: "Success" }; // Only report success if no errors found
                     resolve(result);
                   }
                 } catch (parseError) {
+                  debugLog(`Error parsing manual XML response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`, parseError);
                   reject(parseError);
                 }
               },
@@ -416,6 +461,7 @@ class axlService {
 
             return;
           } else {
+            debugLog(`Operation "${operation}" not found and cannot be handled via manual XML`);
             reject(new Error(`Operation "${operation}" not found`));
             return;
           }
@@ -423,6 +469,7 @@ class axlService {
 
         // Get the operation function - confirmed to exist at this point
         const axlFunc = client.AXLAPIService.AXLPort[operation];
+        debugLog(`Found operation function: ${operation}`);
 
         // Define namespace context with the correct version
         const nsContext = {
@@ -434,70 +481,102 @@ class axlService {
 
         // Handle operations that start with "apply" or "reset"
         if (operation.startsWith("apply") || operation.startsWith("reset")) {
+          debugLog(`Special message handling for ${operation} operation`);
           const operationKey = operation;
 
           // If there's a nested structure, flatten it
           if (tags[operationKey]) {
+            debugLog(`Found nested structure for ${operationKey}`);
             // Check if uuid or name is provided in the nested structure
             if (tags[operationKey].uuid) {
+              debugLog(`Using uuid from nested structure: ${tags[operationKey].uuid}`);
               message = { uuid: tags[operationKey].uuid };
             } else if (tags[operationKey].name) {
+              debugLog(`Using name from nested structure: ${tags[operationKey].name}`);
               message = { name: tags[operationKey].name };
             }
             // If neither uuid nor name is provided, try to use any available
             else {
               // Try to use uuid or name from the top level as fallback
-              message = tags.uuid ? { uuid: tags.uuid } : { name: tags.name };
+              if (tags.uuid) {
+                debugLog(`Using uuid from top level: ${tags.uuid}`);
+                message = { uuid: tags.uuid };
+              } else {
+                debugLog(`Using name from top level: ${tags.name}`);
+                message = { name: tags.name };
+              }
             }
+          } else {
+            debugLog(`No nested structure found for ${operationKey}, using tags directly`);
           }
         }
 
         debugLog(`Executing operation: ${operation}`);
         
+        // Create a sanitized copy of the message for logging
+        let logMessage = JSON.parse(JSON.stringify(message));
+        // Remove any sensitive data if present
+        if (logMessage.password) logMessage.password = '********';
+        debugLog(`Preparing message for operation ${operation}:`, logMessage);
+
         // Execute the operation
         axlFunc(
           message,
           function (err: any, result: any, rawResponse: any) {
             if (err) {
+              debugLog(`Error in operation ${operation}: ${err.message || 'Unknown error'}`);
               // Check if this is an authentication error
               if (err.message && (
                   err.message.includes('Authentication failed') || 
                   err.message.includes('401 Unauthorized') || 
                   err.message.includes('403 Forbidden') ||
                   err.message.includes('credentials'))) {
+                debugLog(`Authentication failure detected in operation error message`);
                 reject(new Error("Authentication failed. Check username and password."));
                 return;
               }
               
               // Check if the error response indicates authentication failure
               if (err.response && (err.response.statusCode === 401 || err.response.statusCode === 403)) {
+                debugLog(`Authentication failure detected in response status code: ${err.response.statusCode}`);
                 reject(new Error("Authentication failed. Check username and password."));
                 return;
               }
               
+              debugLog(`Operation ${operation} failed with error`, err);
               reject(err);
               return;
             }
+            
+            debugLog(`Operation ${operation} executed successfully`);
             
             // Check the raw response for auth failures (belt and suspenders approach)
             if (rawResponse && typeof rawResponse === 'string' && 
                 (rawResponse.includes('Authentication failed') || 
                  rawResponse.includes('401 Unauthorized') || 
                  rawResponse.includes('403 Forbidden'))) {
+              debugLog(`Authentication failure detected in raw response`);
               reject(new Error("Authentication failed. Check username and password."));
               return;
             }
             
             if (result?.hasOwnProperty("return")) {
               const output = result.return;
+              debugLog(`Operation returned data with 'return' property`);
+              
               if (clean) {
+                debugLog(`Cleaning empty/null values from output`);
                 cleanObj(output);
               }
               if (removeAttributes) {
+                debugLog(`Removing attribute fields from output`);
                 cleanAttributes(output);
               }
+              
+              debugLog(`Operation ${operation} completed successfully with return data`);
               resolve(output);
             } else {
+              debugLog(`Operation ${operation} completed successfully without return data`);
               resolve(result || { return: "Success" });
             }
           },
