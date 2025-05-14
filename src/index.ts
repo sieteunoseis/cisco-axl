@@ -1,7 +1,7 @@
-import * as soap from 'strong-soap';
-import * as path from 'path';
-import * as https from 'https';
-import { URL } from 'url';
+import * as soap from "strong-soap";
+import * as path from "path";
+import * as https from "https";
+import { URL } from "url";
 
 const WSDL = soap.soap.WSDL;
 
@@ -30,12 +30,11 @@ interface OperationOptions {
  * @param {any} [data] - Optional data to log
  */
 const debugLog = (message: string, data?: any): void => {
-    // Get the DEBUG value, handling case-insensitivity
+  // Get the DEBUG value, handling case-insensitivity
   const debug = process.env.DEBUG;
-  
+
   // Check if DEBUG is set and is a truthy value (not 'false', 'no', '0', etc.)
-  const isDebugEnabled = debug && 
-    !['false', 'no', '0', 'off', 'n'].includes(debug.toLowerCase());
+  const isDebugEnabled = debug && !["false", "no", "0", "off", "n"].includes(debug.toLowerCase());
 
   if (isDebugEnabled) {
     if (data) {
@@ -100,64 +99,62 @@ class axlService {
   private async _testAuthenticationDirectly(): Promise<boolean> {
     const options = this._OPTIONS;
     const url = new URL(options.endpoint);
-    
+
     return new Promise<boolean>((resolve) => {
-      const authHeader = 'Basic ' + Buffer.from(`${options.username}:${options.password}`).toString('base64');
-      
+      const authHeader = "Basic " + Buffer.from(`${options.username}:${options.password}`).toString("base64");
+
       const reqOptions = {
         hostname: url.hostname,
         port: url.port || 8443,
         path: url.pathname,
-        method: 'GET',  // Simply use GET instead of POST
+        method: "GET", // Simply use GET instead of POST
         headers: {
-          'Authorization': authHeader,
-          'Connection': 'keep-alive'
+          Authorization: authHeader,
+          Connection: "keep-alive",
         },
-        rejectUnauthorized: false // For self-signed certificates
+        rejectUnauthorized: false, // For self-signed certificates
       };
-      
+
       debugLog(`Testing authentication to ${url.hostname}:${url.port || 8443}${url.pathname}`);
-      
+
       const req = https.request(reqOptions, (res) => {
         debugLog(`Authentication test response status: ${res.statusCode}`);
-        
+
         // Check status code for authentication failures
         if (res.statusCode === 401 || res.statusCode === 403) {
-          debugLog('Authentication failed: Unauthorized status code');
+          debugLog("Authentication failed: Unauthorized status code");
           resolve(false); // Authentication failed
           return;
         }
-        
-        let responseData = '';
-        
-        res.on('data', (chunk) => {
+
+        let responseData = "";
+
+        res.on("data", (chunk) => {
           responseData += chunk;
         });
-        
-        res.on('end', () => {
+
+        res.on("end", () => {
           // Check for the expected success message
           const successIndicator = "Cisco CallManager: AXL Web Service";
           if (responseData.includes(successIndicator)) {
-            debugLog('Authentication succeeded: Found success message');
+            debugLog("Authentication succeeded: Found success message");
             resolve(true); // Authentication succeeded
-          } else if (responseData.includes('Authentication failed') || 
-                     responseData.includes('401 Unauthorized') || 
-                     responseData.includes('403 Forbidden')) {
-            debugLog('Authentication failed: Found failure message in response');
+          } else if (responseData.includes("Authentication failed") || responseData.includes("401 Unauthorized") || responseData.includes("403 Forbidden")) {
+            debugLog("Authentication failed: Found failure message in response");
             resolve(false); // Authentication failed
           } else {
-            debugLog('Authentication status uncertain, response did not contain expected messages');
+            debugLog("Authentication status uncertain, response did not contain expected messages");
             // If we're not sure, assume it failed to be safe
             resolve(false);
           }
         });
       });
-      
-      req.on('error', (error) => {
-        console.error('Authentication test error:', error.message);
+
+      req.on("error", (error) => {
+        console.error("Authentication test error:", error.message);
         resolve(false);
       });
-      
+
       // Since it's a GET request, we just end it without writing any data
       req.end();
     });
@@ -170,13 +167,13 @@ class axlService {
    * @memberof axlService
    */
   returnOperations(filter?: string): Promise<string[]> {
-    debugLog(`Getting available operations${filter ? ` with filter: ${filter}` : ''}`);
+    debugLog(`Getting available operations${filter ? ` with filter: ${filter}` : ""}`);
     const options = this._OPTIONS;
     return new Promise((resolve, reject) => {
       debugLog(`Creating SOAP client for ${options.url}`);
       soap.soap.createClient(options.url, wsdlOptions, function (err: any, client: any) {
         if (err) {
-          debugLog(`SOAP error occurred: ${err.message || 'Unknown error'}`, err);
+          debugLog(`SOAP error occurred: ${err.message || "Unknown error"}`, err);
           reject(err);
           return;
         }
@@ -190,7 +187,7 @@ class axlService {
         for (const [, value] of Object.entries(description.AXLAPIService.AXLPort)) {
           outputArr.push((value as any).name);
         }
-        
+
         const sortAlphaNum = (a: string, b: string) => a.localeCompare(b, "en", { numeric: true });
         const matches = (substring: string, array: string[]) =>
           array.filter((element) => {
@@ -227,7 +224,7 @@ class axlService {
       debugLog(`Opening WSDL file: ${wsdlPath}`);
       WSDL.open(wsdlPath, wsdlOptions, function (err: any, wsdl: any) {
         if (err) {
-          debugLog(`WSDL error occurred: ${err.message || 'Unknown error'}`, err);
+          debugLog(`WSDL error occurred: ${err.message || "Unknown error"}`, err);
           reject(err);
           return;
         }
@@ -235,27 +232,27 @@ class axlService {
         const operName = operationDef.$name;
         const operationDesc = operationDef.describe(wsdl);
         const envelopeBody: any = {};
-        
+
         operationDesc.input.body.elements.map((object: any) => {
           const operMatch = new RegExp(object.qname.name, "i");
           envelopeBody[object.qname.name] = "";
-          
+
           if (object.qname.name === "searchCriteria") {
             const output = nestedObj(object);
             envelopeBody.searchCriteria = output;
           }
-          
+
           if (object.qname.name === "returnedTags") {
             const output = nestedObj(object);
             envelopeBody.returnedTags = output;
           }
-          
+
           if (operName.match(operMatch)) {
             const output = nestedObj(object);
             envelopeBody[object.qname.name] = output;
           }
         });
-        
+
         resolve(envelopeBody);
       });
     });
@@ -280,7 +277,7 @@ class axlService {
       debugLog(`Authentication failed for operation: ${operation}`);
       throw new Error("Authentication failed. Check username and password.");
     }
-    debugLog('Authentication successful, proceeding with operation');
+    debugLog("Authentication successful, proceeding with operation");
 
     const clean = opts?.clean ?? false;
     const dataContainerIdentifierTails = opts?.dataContainerIdentifierTails ?? "_data";
@@ -299,7 +296,7 @@ class axlService {
       debugLog(`Creating SOAP client for operation: ${operation}`);
       soap.soap.createClient(options.url, wsdlOptions, function (err: any, client: any) {
         if (err) {
-          debugLog(`SOAP client creation error: ${err.message || 'Unknown error'}`, err);
+          debugLog(`SOAP client creation error: ${err.message || "Unknown error"}`, err);
           reject(err);
           return;
         }
@@ -338,13 +335,10 @@ class axlService {
           // Check if this is an authentication error
           if (err.root?.Envelope?.Body?.Fault) {
             const fault = err.root.Envelope.Body.Fault;
-            const faultString = fault.faultstring || fault.faultString || '';
+            const faultString = fault.faultstring || fault.faultString || "";
             debugLog(`SOAP fault detected: ${faultString}`, fault);
-            
-            if (typeof faultString === 'string' && 
-                (faultString.includes('Authentication failed') || 
-                 faultString.includes('credentials') ||
-                 faultString.includes('authorize'))) {
+
+            if (typeof faultString === "string" && (faultString.includes("Authentication failed") || faultString.includes("credentials") || faultString.includes("authorize"))) {
               debugLog("Authentication error detected in SOAP fault");
               reject(new Error("Authentication failed. Check username and password."));
             } else {
@@ -390,7 +384,7 @@ class axlService {
              </soapenv:Envelope>`;
 
             debugLog(`Executing manual XML request for operation: ${operation}`);
-            
+
             // Use client.request for direct XML request
             debugLog(`Sending manual XML request to ${options.endpoint}`, { operation, paramTag, paramValue });
             (client as any)._request(
@@ -398,34 +392,30 @@ class axlService {
               rawXml,
               function (err: any, body: any, response: any) {
                 if (err) {
-                  debugLog(`Error in manual XML request: ${err.message || 'Unknown error'}`, err);
+                  debugLog(`Error in manual XML request: ${err.message || "Unknown error"}`, err);
                   reject(err);
                   return;
                 }
-                
+
                 // Check for authentication failures in the response
                 if (response && (response.statusCode === 401 || response.statusCode === 403)) {
                   debugLog(`Authentication failed in manual request. Status code: ${response.statusCode}`);
                   reject(new Error("Authentication failed. Check username and password."));
                   return;
                 }
-                
-                if (body && typeof body === 'string' && 
-                    (body.includes('Authentication failed') || 
-                     body.includes('401 Unauthorized') || 
-                     body.includes('403 Forbidden'))) {
+
+                if (body && typeof body === "string" && (body.includes("Authentication failed") || body.includes("401 Unauthorized") || body.includes("403 Forbidden"))) {
                   debugLog(`Authentication failed in manual request. Found auth failure text in body.`);
                   reject(new Error("Authentication failed. Check username and password."));
                   return;
                 }
-                
+
                 debugLog(`Manual XML request response received. Size: ${body ? body.length : 0} bytes`);
-                
-                
+
                 // Parse the response
                 try {
                   // Don't automatically assume success
-                  if (body && body.includes('Fault')) {
+                  if (body && body.includes("Fault")) {
                     debugLog("Fault detected in manual XML response");
                     // Try to extract the fault message
                     const faultMatch = /<faultstring>(.*?)<\/faultstring>/;
@@ -433,9 +423,7 @@ class axlService {
                     if (match && match[1]) {
                       const faultString = match[1];
                       debugLog(`Extracted fault string: ${faultString}`);
-                      if (faultString.includes('Authentication failed') || 
-                          faultString.includes('credentials') ||
-                          faultString.includes('authorize')) {
+                      if (faultString.includes("Authentication failed") || faultString.includes("credentials") || faultString.includes("authorize")) {
                         debugLog("Authentication failure detected in fault string");
                         reject(new Error("Authentication failed. Check username and password."));
                       } else {
@@ -444,7 +432,7 @@ class axlService {
                       }
                     } else {
                       debugLog("Unknown SOAP fault format, couldn't extract fault string");
-                      reject(new Error('Unknown SOAP fault occurred'));
+                      reject(new Error("Unknown SOAP fault occurred"));
                     }
                   } else {
                     debugLog(`Operation ${operation} completed successfully via manual XML`);
@@ -452,7 +440,7 @@ class axlService {
                     resolve(result);
                   }
                 } catch (parseError) {
-                  debugLog(`Error parsing manual XML response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`, parseError);
+                  debugLog(`Error parsing manual XML response: ${parseError instanceof Error ? parseError.message : "Unknown error"}`, parseError);
                   reject(parseError);
                 }
               },
@@ -512,11 +500,11 @@ class axlService {
         }
 
         debugLog(`Executing operation: ${operation}`);
-        
+
         // Create a sanitized copy of the message for logging
         let logMessage = JSON.parse(JSON.stringify(message));
         // Remove any sensitive data if present
-        if (logMessage.password) logMessage.password = '********';
+        if (logMessage.password) logMessage.password = "********";
         debugLog(`Preparing message for operation ${operation}:`, logMessage);
 
         // Execute the operation
@@ -524,46 +512,39 @@ class axlService {
           message,
           function (err: any, result: any, rawResponse: any) {
             if (err) {
-              debugLog(`Error in operation ${operation}: ${err.message || 'Unknown error'}`);
+              debugLog(`Error in operation ${operation}: ${err.message || "Unknown error"}`);
               // Check if this is an authentication error
-              if (err.message && (
-                  err.message.includes('Authentication failed') || 
-                  err.message.includes('401 Unauthorized') || 
-                  err.message.includes('403 Forbidden') ||
-                  err.message.includes('credentials'))) {
+              if (err.message && (err.message.includes("Authentication failed") || err.message.includes("401 Unauthorized") || err.message.includes("403 Forbidden") || err.message.includes("credentials"))) {
                 debugLog(`Authentication failure detected in operation error message`);
                 reject(new Error("Authentication failed. Check username and password."));
                 return;
               }
-              
+
               // Check if the error response indicates authentication failure
               if (err.response && (err.response.statusCode === 401 || err.response.statusCode === 403)) {
                 debugLog(`Authentication failure detected in response status code: ${err.response.statusCode}`);
                 reject(new Error("Authentication failed. Check username and password."));
                 return;
               }
-              
+
               debugLog(`Operation ${operation} failed with error`, err);
               reject(err);
               return;
             }
-            
+
             debugLog(`Operation ${operation} executed successfully`);
-            
+
             // Check the raw response for auth failures (belt and suspenders approach)
-            if (rawResponse && typeof rawResponse === 'string' && 
-                (rawResponse.includes('Authentication failed') || 
-                 rawResponse.includes('401 Unauthorized') || 
-                 rawResponse.includes('403 Forbidden'))) {
+            if (rawResponse && typeof rawResponse === "string" && (rawResponse.includes("Authentication failed") || rawResponse.includes("401 Unauthorized") || rawResponse.includes("403 Forbidden"))) {
               debugLog(`Authentication failure detected in raw response`);
               reject(new Error("Authentication failed. Check username and password."));
               return;
             }
-            
+
             if (result?.hasOwnProperty("return")) {
               const output = result.return;
               debugLog(`Operation returned data with 'return' property`);
-              
+
               if (clean) {
                 debugLog(`Cleaning empty/null values from output`);
                 cleanObj(output);
@@ -572,7 +553,7 @@ class axlService {
                 debugLog(`Removing attribute fields from output`);
                 cleanAttributes(output);
               }
-              
+
               debugLog(`Operation ${operation} completed successfully with return data`);
               resolve(output);
             } else {
@@ -595,10 +576,10 @@ class axlService {
  */
 const nestedObj = (object: any): any => {
   const operObj: any = {};
-  
+
   object.elements.map((object: any) => {
     operObj[object.qname.name] = "";
-    
+
     if (Array.isArray(object.elements) && object.elements.length > 0) {
       const nestName = object.qname.name;
       operObj[nestName] = {};
@@ -606,9 +587,9 @@ const nestedObj = (object: any): any => {
       operObj[nestName] = nestObj;
     }
   });
-  
+
   const isEmpty = Object.keys(operObj).length === 0;
-  
+
   if (isEmpty) {
     return "";
   } else {
@@ -626,7 +607,7 @@ const cleanObj = (object: any): any => {
     if (v && typeof v === "object") {
       cleanObj(v);
     }
-    
+
     if ((v && typeof v === "object" && !Object.keys(v).length) || v === null || v === undefined) {
       if (Array.isArray(object)) {
         object.splice(parseInt(k), 1);
@@ -635,7 +616,7 @@ const cleanObj = (object: any): any => {
       }
     }
   });
-  
+
   return object;
 };
 
@@ -649,7 +630,7 @@ const cleanAttributes = (object: any): any => {
     if (v && typeof v === "object") {
       cleanAttributes(v);
     }
-    
+
     if (v && typeof v === "object" && "attributes" in object) {
       if (Array.isArray(object)) {
         object.splice(parseInt(k), 1);
@@ -658,7 +639,7 @@ const cleanAttributes = (object: any): any => {
       }
     }
   });
-  
+
   return object;
 };
 
