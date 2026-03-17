@@ -28,75 +28,134 @@ NODE_NO_WARNINGS=1
 NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
-### Debugging
+### Logging
 
-You can enable debug logging by setting the `DEBUG` environment variable to any truthy value (except 'false', 'no', '0', 'off', or 'n'). When enabled, debug logs will show detailed information about authentication tests and operations being executed.
+You can configure logging via the constructor options or the `DEBUG` environment variable.
+
+**Environment variable (simple):**
 
 ```env
 DEBUG=true
 ```
 
-Debug logs will be prefixed with `[AXL DEBUG]` and include information such as:
-- Authentication test attempts and responses
-- Operations being executed
-- API responses
+**Constructor options (advanced):**
 
-This is especially helpful when troubleshooting authentication issues or unexpected API behavior.
+```javascript
+let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
+  logging: {
+    level: "info",  // "error" | "warn" | "info" | "debug"
+    handler: (level, message, data) => {
+      // Custom log handler — send to your logging framework, file, etc.
+      myLogger[level](message, data);
+    }
+  }
+});
+
+// Change level at runtime
+service.setLogLevel("debug");
+```
+
+Log levels: `error` < `warn` < `info` < `debug`. Default level is `error` (or `debug` if `DEBUG` env var is truthy).
 
 ## Features
 
-- This library uses strong-soap to parse the AXL WSDL file. As a result any AXL function for your specified version is avaliable to use!
-- Supports the Promise API. Can chain procedures together or you could use Promise.all() to run multiple "get" operations at the same time.
-- Returns all results in JSON rather than XML. Function has options to remove all blank or empty fields from JSON results via optional clean parameter.
-- Support for [json-variables](https://codsen.com/os/json-variables). The executeOperation function will recognize the dataContainerIdentifierTails from json-variables and remove them from your call. This avoids any SOAP fault issues from having extra information in call. See examples folder for use case.
-- TypeScript support with type definitions for better developer experience and code reliability
-- Authentication testing with the testAuthentication method to verify credentials before executing operations
-- Debug logging capabilities to help troubleshoot API interactions by setting the DEBUG environment variable
+- Uses strong-soap to parse the AXL WSDL file — any AXL function for your specified version is available
+- Promise-based API with async/await support
+- Returns JSON, with optional cleaning of empty/null fields and attribute removal
+- [json-variables](https://codsen.com/os/json-variables) support for template-based operations
+- TypeScript support with full type definitions
+- ESM and CommonJS dual-package support
+- Custom error classes (`AXLAuthError`, `AXLOperationError`, `AXLNotFoundError`, `AXLValidationError`)
+- Retry mechanism with exponential backoff for transient network errors
+- Batch operations with concurrency control (`executeBatch`)
+- Convenience methods for common CRUD operations (`getItem`, `listItems`, `addItem`, `updateItem`, `removeItem`)
+- SQL query/update helpers (`executeSqlQuery`, `executeSqlUpdate`)
+- Detailed tag metadata including required/nillable/type info (`getOperationTagsDetailed`)
+- Configurable logging with levels and custom handlers
+- SOAP client caching for improved performance
+- Input parameter validation with descriptive error messages
+- Authentication testing with the `testAuthentication` method
 
 ## Usage
 
 ```javascript
 const axlService = require("cisco-axl");
 
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt","14.0");
+let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
 
-var operation = "addRoutePartition";
+// Low-level: executeOperation
 var tags = {
   routePartition: {
     name: "INTERNAL-PT",
     description: "Internal directory numbers",
-    timeScheduleIdName: "",
-    useOriginatingDeviceTimeZone: "",
-    timeZone: "",
-    partitionUsage: "",
   },
 };
 
 service
-  .executeOperation(operation, tags)
+  .executeOperation("addRoutePartition", tags)
   .then((results) => {
     console.log("addRoutePartition UUID", results);
   })
   .catch((error) => {
     console.log(error);
   });
+
+// Convenience methods (v1.5.0+)
+await service.addItem("RoutePartition", { name: "INTERNAL-PT", description: "Internal" });
+await service.listItems("RoutePartition");
+await service.getItem("RoutePartition", "INTERNAL-PT");
+await service.updateItem("RoutePartition", "INTERNAL-PT", { description: "Updated" });
+await service.removeItem("RoutePartition", "INTERNAL-PT");
+
+// SQL queries
+await service.executeSqlQuery("SELECT name FROM routepartition");
+
+// Batch operations
+const results = await service.executeBatch([
+  { operation: "getRoutePartition", tags: { name: "INTERNAL-PT" } },
+  { operation: "getRoutePartition", tags: { name: "EXTERNAL-PT" } },
+], 5); // concurrency limit
 ```
 
 ## Methods
 
-- new axlService(options: obj)
-- axlService.testAuthentication()
-- axlService.returnOperations(filter?: string)
-- axlService.getOperationTags(operation: string)
-- axlService.executeOperation(operation: string,tags: obj, opts?: obj)
+### Core
 
-### new axlService(options)
+- `new axlService(host, username, password, version, options?)`
+- `service.testAuthentication()`
+- `service.returnOperations(filter?)`
+- `service.getOperationTags(operation)`
+- `service.getOperationTagsDetailed(operation)`
+- `service.executeOperation(operation, tags, opts?)`
+- `service.executeBatch(operations, concurrency?)`
+- `service.setLogLevel(level)`
 
-Service constructor for methods. Requires a JSON object consisting of hostname, username, password and version.
+### Convenience
+
+- `service.getItem(itemType, identifier, opts?)`
+- `service.listItems(itemType, searchCriteria?, returnedTags?, opts?)`
+- `service.addItem(itemType, data, opts?)`
+- `service.updateItem(itemType, identifier, updates, opts?)`
+- `service.removeItem(itemType, identifier, opts?)`
+- `service.executeSqlQuery(sql)`
+- `service.executeSqlUpdate(sql)`
+
+### new axlService(host, username, password, version, options?)
+
+Service constructor. Requires hostname, username, password, and version. Optional configuration for logging and retry behavior.
 
 ```node
+// Basic usage
 let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
+
+// With options
+let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
+  logging: { level: "info" },
+  retry: { retries: 3, retryDelay: 1000 }  // exponential backoff for transient errors
+});
 ```
+
+Supported versions: `11.0`, `11.5`, `12.0`, `12.5`, `14.0`, `15.0`
 
 ### service.testAuthentication() ⇒ Returns promise
 
@@ -128,6 +187,35 @@ Method requires passing an AXL operation. Returns results via Promise.
 | :--------------- | :-------- | :----- | :--------- | :----------------------------------------------------------------------- |
 | getOperationTags | operation | string | Yes        | Provide the name of the AXL operation you wish to retrieve the tags for. |
 
+### service.getOperationTagsDetailed(operation) ⇒ Returns promise
+
+Method requires passing an AXL operation. Returns detailed metadata for each tag including whether it is required, nillable, an array type, and its XSD type. Child elements are returned recursively.
+
+| Method                   | Argument  | Type   | Obligatory | Description                                                              |
+| :----------------------- | :-------- | :----- | :--------- | :----------------------------------------------------------------------- |
+| getOperationTagsDetailed | operation | string | Yes        | Provide the name of the AXL operation you wish to retrieve the tags for. |
+
+Each tag in the returned object has the following structure:
+
+| Property | Type             | Description                                       |
+| :------- | :--------------- | :------------------------------------------------ |
+| name     | string           | Tag name                                          |
+| required | boolean          | Whether the tag is required (based on minOccurs)  |
+| nillable | boolean          | Whether the tag accepts null values               |
+| isMany   | boolean          | Whether the tag can appear multiple times (array) |
+| type     | string \| null   | XSD type name (e.g. "string", "XRoutePartition")  |
+| children | object \| null   | Nested tag metadata, or null for leaf elements    |
+
+Example:
+
+```javascript
+service.getOperationTagsDetailed("addRoutePartition").then((tags) => {
+  console.log(tags.routePartition.required);         // true
+  console.log(tags.routePartition.children.name.nillable); // true
+  console.log(tags.routePartition.children.name.type);     // "string"
+});
+```
+
 ### service.executeOperation(operation,tags,opts?) ⇒ Returns promise
 
 Method requires passing an AXL operation and JSON object of tags. Returns results via Promise.
@@ -154,6 +242,105 @@ var opts = {
 | executeOperation | operation | string | Yes        | Provide the name of the AXL operation you wish to execute. |
 | executeOperation | tags      | object | Yes        | Provide a JSON object of the tags for your operation.      |
 | executeOperation | opts      | object | No         | Provide a JSON object of options for your operation.       |
+
+### service.executeBatch(operations, concurrency?) ⇒ Returns promise
+
+Executes multiple AXL operations in parallel with concurrency control. Returns an array of `BatchResult` objects in the same order as the input.
+
+```javascript
+const results = await service.executeBatch([
+  { operation: "getPhone", tags: { name: "SEP001122334455" } },
+  { operation: "getPhone", tags: { name: "SEP556677889900" } },
+  { operation: "getLine", tags: { pattern: "1001", routePartitionName: "INTERNAL-PT" } },
+], 3); // max 3 concurrent requests
+
+results.forEach((r) => {
+  if (r.success) {
+    console.log(`${r.operation}: OK`, r.result);
+  } else {
+    console.log(`${r.operation}: FAILED`, r.error.message);
+  }
+});
+```
+
+### Convenience Methods
+
+These methods simplify common CRUD operations. The `itemType` parameter is the PascalCase AXL type (e.g. `"Phone"`, `"Line"`, `"RoutePartition"`).
+
+```javascript
+// Get a single item by name or UUID
+await service.getItem("Phone", "SEP001122334455");
+await service.getItem("Phone", { uuid: "abc-123" });
+
+// List items with search criteria
+await service.listItems("RoutePartition");  // all partitions
+await service.listItems("Phone", { name: "SEP%" });  // filtered
+
+// Add a new item
+await service.addItem("RoutePartition", { name: "NEW-PT", description: "New partition" });
+
+// Update an existing item
+await service.updateItem("Phone", "SEP001122334455", { description: "Updated" });
+
+// Remove an item
+await service.removeItem("RoutePartition", "NEW-PT");
+
+// SQL operations
+const rows = await service.executeSqlQuery("SELECT name, description FROM routepartition");
+await service.executeSqlUpdate("UPDATE routepartition SET description='test' WHERE name='NEW-PT'");
+```
+
+## Error Handling
+
+All errors extend the base `AXLError` class. You can catch specific error types:
+
+```javascript
+const { AXLAuthError, AXLNotFoundError, AXLOperationError, AXLValidationError } = require("cisco-axl");
+
+try {
+  await service.executeOperation("getPhone", { name: "INVALID" });
+} catch (error) {
+  if (error instanceof AXLAuthError) {
+    console.log("Bad credentials");
+  } else if (error instanceof AXLNotFoundError) {
+    console.log("Operation not found:", error.operation);
+  } else if (error instanceof AXLOperationError) {
+    console.log("SOAP fault:", error.message, error.faultCode);
+  } else if (error instanceof AXLValidationError) {
+    console.log("Invalid input:", error.message);
+  }
+}
+```
+
+## Retry Configuration
+
+Transient network errors (ECONNRESET, ETIMEDOUT, etc.) can be automatically retried with exponential backoff:
+
+```javascript
+let service = new axlService("10.10.20.1", "admin", "pass", "14.0", {
+  retry: {
+    retries: 3,        // max retry attempts (default: 0 = disabled)
+    retryDelay: 1000,  // base delay in ms, doubles each attempt (default: 1000)
+    retryOn: (error) => {
+      // Custom function to determine if error is retryable (optional)
+      return error.message.includes("ECONNRESET");
+    }
+  }
+});
+```
+
+## ESM Support
+
+This library supports both CommonJS and ES modules:
+
+```javascript
+// CommonJS
+const axlService = require("cisco-axl");
+
+// ESM
+import axlService from "cisco-axl";
+import { AXLAuthError, AXLOperationError } from "cisco-axl";
+```
 
 ## Examples
 
@@ -215,7 +402,7 @@ service.executeOperation("updateLine", lineTags,{ dataContainerIdentifierTails: 
 
 ## Limitations
 
-Currently there is an issue with strong-soap regarding returning nillable values for element tags. These values show if a particular tags is optional or not. Once resolved a method will be added to return tags nillable status (true or false).
+~~Currently there is an issue with strong-soap regarding returning nillable values for element tags.~~ As of v1.5.0, the `getOperationTagsDetailed()` method works around the strong-soap limitation by accessing raw WSDL element metadata to return `required`, `nillable`, `isMany`, and `type` information for each tag.
 
 ## TypeScript Support
 
@@ -252,7 +439,6 @@ See the `examples/typescript` directory for more TypeScript examples.
 
 ## TODO
 
-- Add more promised based examples, particularly a Promise.All() example.
 - Add example for reading in CSV and performing a bulk exercise with variables.
 - Add example for saving SQL output to CSV.
 

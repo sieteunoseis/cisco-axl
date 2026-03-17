@@ -1,9 +1,17 @@
 {
   "name": "cisco-axl",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "A library to make Cisco AXL a lot easier",
   "main": "dist/index.js",
+  "module": "main.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./main.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
@@ -36,12 +44,12 @@
     "strong-soap": "^4.1.5"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5",
+    "@types/node": "^22.19.15",
     "dotenv": "*",
     "envalid": "*",
     "json-variables": "^10.1.0",
     "node-emoji": "*",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.9.3"
   }
 }

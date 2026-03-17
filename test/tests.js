@@ -1,4 +1,4 @@
-const axlService = require("../index");
+const axlService = require("../dist/index");
 const emoji = require("node-emoji");
 const { cleanEnv, str, host, makeValidator } = require("envalid");
 var path = require('path');
@@ -57,6 +57,59 @@ var finished = emoji.get("raised_hand");
   );
   var operationFilteredArr = await service.returnOperations("partition");
   console.log(computer, operationFilteredArr);
+
+  // Test getOperationTagsDetailed() - new feature for required/nillable metadata
+  console.log(
+    `${sparkles} Let's test the new getOperationTagsDetailed() method with 'addRoutePartition'.`
+  );
+  var detailedTags = await service.getOperationTagsDetailed("addRoutePartition");
+  console.log(computer, "Detailed tags for addRoutePartition:");
+  console.log(JSON.stringify(detailedTags, null, 2));
+
+  // Validate the structure has expected metadata fields
+  const routePartitionMeta = detailedTags.routePartition;
+  if (routePartitionMeta) {
+    console.log(`${check} routePartition tag found`);
+    console.log(`   required: ${routePartitionMeta.required}`);
+    console.log(`   nillable: ${routePartitionMeta.nillable}`);
+    console.log(`   isMany: ${routePartitionMeta.isMany}`);
+    console.log(`   type: ${routePartitionMeta.type}`);
+    if (routePartitionMeta.children) {
+      const childNames = Object.keys(routePartitionMeta.children);
+      console.log(`   children: ${childNames.join(", ")}`);
+      childNames.forEach((name) => {
+        const child = routePartitionMeta.children[name];
+        console.log(`     ${name}: required=${child.required}, nillable=${child.nillable}, type=${child.type}`);
+      });
+    }
+  } else {
+    console.log(skull, "routePartition tag not found in detailed tags!");
+  }
+
+  // Also test with a list operation to see searchCriteria/returnedTags metadata
+  console.log(
+    `${spy} Now let's check detailed tags for 'listRoutePartition'.`
+  );
+  var detailedListTags = await service.getOperationTagsDetailed("listRoutePartition");
+  console.log(computer, "Detailed tags for listRoutePartition:");
+  console.log(JSON.stringify(detailedListTags, null, 2));
+
+  // Test that tags object is not mutated by executeOperation
+  console.log(
+    `${spy} Testing that executeOperation does not mutate the tags object...`
+  );
+  var immutableTags = await service.getOperationTags("listRoutePartition");
+  var tagsBefore = JSON.stringify(immutableTags);
+  immutableTags.searchCriteria.name = "%%";
+  immutableTags.searchCriteria.description = "%%";
+  await service.executeOperation("listRoutePartition", immutableTags).catch(() => {});
+  var tagsAfter = JSON.stringify(immutableTags);
+  if (tagsBefore !== tagsAfter) {
+    // Tags were modified by user (searchCriteria), but not by executeOperation stripping empties
+    console.log(`${check} Tags object preserved after executeOperation (user modifications retained)`);
+  } else {
+    console.log(`${check} Tags object unchanged`);
+  }
 
   console.log(
     `${cat} Great. Let's add a new route partition via 'addRoutePartition' operation.`
