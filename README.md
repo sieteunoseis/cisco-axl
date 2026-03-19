@@ -26,7 +26,7 @@ npx cisco-axl --help
 ### AI Agent Skills
 
 ```bash
-npx skillsadd sieteunoseis/cisco-axl
+npx skills add sieteunoseis/cisco-axl
 ```
 
 ## Requirements
