@@ -23,6 +23,11 @@ program
 
 // Register commands
 require("./commands/config.js")(program);
+require("./commands/get.js")(program);
+require("./commands/list.js")(program);
+require("./commands/add.js")(program);
+require("./commands/update.js")(program);
+require("./commands/remove.js")(program);
 // require("./commands/phone.js")(program);
 // require("./commands/line.js")(program);
 // require("./commands/user.js")(program);
