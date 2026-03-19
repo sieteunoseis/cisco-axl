@@ -1,0 +1,26 @@
+{
+  "name": "cisco-axl",
+  "description": "Cisco CUCM AXL CLI skills for provisioning phones, lines, route patterns, partitions, CSS, and more via the Administrative XML API",
+  "version": "2.0.0",
+  "author": {
+    "name": "Jeremy Worden",
+    "url": "https://github.com/sieteunoseis"
+  },
+  "homepage": "https://github.com/sieteunoseis/cisco-axl#readme",
+  "repository": "https://github.com/sieteunoseis/cisco-axl",
+  "license": "MIT",
+  "keywords": [
+    "cisco",
+    "cucm",
+    "axl",
+    "unified-communications",
+    "voip",
+    "telephony",
+    "provisioning",
+    "soap",
+    "callmanager",
+    "cli",
+    "automation",
+    "bulk-provisioning"
+  ]
+}
