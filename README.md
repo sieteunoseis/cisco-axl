@@ -1,5 +1,11 @@
 # Cisco AXL Library & CLI
 
+[![npm version](https://img.shields.io/npm/v/cisco-axl.svg)](https://www.npmjs.com/package/cisco-axl)
+[![CI](https://github.com/sieteunoseis/cisco-axl/actions/workflows/ci.yml/badge.svg)](https://github.com/sieteunoseis/cisco-axl/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/node/v/cisco-axl.svg)](https://nodejs.org)
+[![Skills](https://img.shields.io/badge/skills.sh-cisco--axl--cli-blue)](https://skills.sh/sieteunoseis/cisco-axl)
+
 A JavaScript library and CLI to interact with Cisco CUCM via AXL SOAP API. Dynamically discovers all AXL operations from the WSDL schema — any operation for your specified version is available without static definitions.
 
 Administrative XML (AXL) information can be found at:
