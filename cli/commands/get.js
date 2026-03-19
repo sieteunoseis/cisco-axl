@@ -57,8 +57,17 @@ module.exports = function registerGetCommand(program) {
           result = await service.getItem(type, identifier, opts);
         }
 
+        // Unwrap single-key wrapper (e.g., { phone: {...} } → {...})
+        let output = result;
+        if (result && typeof result === "object" && !Array.isArray(result)) {
+          const keys = Object.keys(result);
+          if (keys.length === 1 && typeof result[keys[0]] === "object" && result[keys[0]] !== null) {
+            output = result[keys[0]];
+          }
+        }
+
         const format = globalOpts.format;
-        await printResult(result, format);
+        await printResult(output, format);
       } catch (err) {
         status = "error";
         errorMsg = err.message;

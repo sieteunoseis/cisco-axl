@@ -31,7 +31,15 @@ module.exports = function registerSqlCommand(program) {
           removeAttributes: !globalOpts.attributes,
         };
 
-        const result = await service.executeSqlQuery(sqlStr, opts);
+        const rawResult = await service.executeSqlQuery(sqlStr, opts);
+        // Unwrap { row: [...] } wrapper from SQL results
+        let result = rawResult;
+        if (result && typeof result === "object" && !Array.isArray(result)) {
+          const keys = Object.keys(result);
+          if (keys.length === 1 && Array.isArray(result[keys[0]])) {
+            result = result[keys[0]];
+          }
+        }
         const format = globalOpts.format;
         await printResult(result, format);
       } catch (err) {

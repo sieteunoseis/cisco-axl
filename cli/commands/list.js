@@ -76,6 +76,24 @@ function hasRows(result) {
 }
 
 /**
+ * Unwrap list results from AXL's type wrapper.
+ * AXL returns list results like { routePartition: [...] } or { row: [...] }.
+ * This extracts the array for cleaner display.
+ * @param {*} result
+ * @returns {*}
+ */
+function unwrapListResult(result) {
+  if (Array.isArray(result)) return result;
+  if (result && typeof result === "object") {
+    const keys = Object.keys(result);
+    if (keys.length === 1 && Array.isArray(result[keys[0]])) {
+      return result[keys[0]];
+    }
+  }
+  return result;
+}
+
+/**
  * Registers the list command on the given Commander program.
  * @param {import("commander").Command} program
  */
@@ -160,13 +178,15 @@ module.exports = function registerListCommand(program) {
             tags.first = String(cmdOpts.first);
           }
 
-          const result = await service.executeOperation("list" + type, tags, opts);
+          const rawResult = await service.executeOperation("list" + type, tags, opts);
+          const result = unwrapListResult(rawResult);
           totalRows = countRows(result);
           const format = globalOpts.format;
           await printResult(result, format);
         } else {
           // Basic list
-          const result = await service.listItems(type, searchCriteria, returnedTags, opts);
+          const rawResult = await service.listItems(type, searchCriteria, returnedTags, opts);
+          const result = unwrapListResult(rawResult);
           totalRows = countRows(result);
           const format = globalOpts.format;
           await printResult(result, format);

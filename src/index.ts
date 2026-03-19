@@ -706,8 +706,14 @@ class axlService {
     const tags = await this.getOperationTags(operation);
 
     // Apply search criteria
-    if (searchCriteria) {
-      Object.assign(tags.searchCriteria, searchCriteria);
+    if (searchCriteria && Object.keys(searchCriteria).length > 0) {
+      // Set user-provided criteria, wildcard any remaining search fields
+      // (AXL treats empty search fields as "no match", not "any")
+      if (tags.searchCriteria) {
+        Object.keys(tags.searchCriteria).forEach((k) => {
+          tags.searchCriteria[k] = searchCriteria[k] || "%%";
+        });
+      }
     } else if (tags.searchCriteria) {
       // Default: wildcard on all search fields
       Object.keys(tags.searchCriteria).forEach((k) => {
