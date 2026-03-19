@@ -1,298 +1,252 @@
-# Cisco AXL SOAP Library
+# Cisco AXL Library & CLI
 
-A Javascript library to pull AXL data Cisco CUCM via SOAP. The goal of this project is to make it easier for people to use AXL and to include all functionality of AXL. This library utilizes [strong-soap](https://www.npmjs.com/package/strong-soap) to read Cisco's WSDL file. As a result this library can use any function in the schema for the version that you specify.
+A JavaScript library and CLI to interact with Cisco CUCM via AXL SOAP API. Dynamically discovers all AXL operations from the WSDL schema — any operation for your specified version is available without static definitions.
 
 Administrative XML (AXL) information can be found at:
 [Administrative XML (AXL) Reference](https://developer.cisco.com/docs/axl/#!axl-developer-guide).
 
 ## Installation
 
-Using npm:
+```bash
+npm install cisco-axl
+```
 
-```javascript
-npm i -g npm
-npm i --save cisco-axl
+### Global CLI install
+
+```bash
+npm install -g cisco-axl
+```
+
+Or run without installing:
+
+```bash
+npx cisco-axl --help
+```
+
+### AI Agent Skills
+
+```bash
+npx skillsadd sieteunoseis/cisco-axl
 ```
 
 ## Requirements
 
-This package uses the built in Fetch API of Node. This feature was first introduced in Node v16.15.0. You may need to enable expermential vm module. Also you can disable warnings with an optional enviromental variable.
+If you are using self-signed certificates on Cisco VOS products you may need to disable TLS verification, or use the `--insecure` CLI flag.
 
-Also if you are using self signed certificates on Cisco VOS products you may need to disable TLS verification. This makes TLS, and HTTPS by extension, insecure. The use of this environment variable is strongly discouraged. Please only do this in a lab enviroment.
+Supported CUCM versions: `11.0`, `11.5`, `12.0`, `12.5`, `14.0`, `15.0`
 
-Suggested enviromental variables:
+## CLI
 
-```env
-NODE_OPTIONS=--experimental-vm-modules
-NODE_NO_WARNINGS=1
-NODE_TLS_REJECT_UNAUTHORIZED=0
+The CLI provides full AXL access from the command line — CRUD operations, SQL queries, operation discovery, bulk provisioning from CSV, and a raw execute escape hatch for any AXL operation.
+
+### Quick Start
+
+```bash
+# Configure a cluster
+cisco-axl config add lab --host 10.0.0.1 --username admin --password secret --cucm-version 14.0 --insecure
+
+# Test the connection
+cisco-axl config test
+
+# List phones
+cisco-axl list Phone --search "name=SEP%"
+
+# Get a specific phone
+cisco-axl get Phone SEP001122334455 --returned-tags "name,model,description"
+
+# SQL query
+cisco-axl sql query "SELECT name, description FROM device WHERE name LIKE 'SEP%'"
+
+# Discover available operations
+cisco-axl operations --filter phone
+cisco-axl operations --type action --filter phone
+
+# Describe what tags an operation needs
+cisco-axl describe getPhone --detailed
+
+# Execute any AXL operation
+cisco-axl execute doLdapSync --tags '{"name":"LDAP_Main"}'
 ```
 
-### Logging
+### Commands
 
-You can configure logging via the constructor options or the `DEBUG` environment variable.
+| Command | Description |
+|---------|-------------|
+| `config add/use/list/show/remove/test` | Manage multi-cluster configurations |
+| `get <type> <identifier>` | Get a single item |
+| `list <type>` | List items with search, pagination, returned tags |
+| `add <type>` | Add an item (inline JSON, template, or bulk CSV) |
+| `update <type> <identifier>` | Update an item |
+| `remove <type> <identifier>` | Remove an item |
+| `sql query/update` | Execute SQL against CUCM |
+| `execute <operation>` | Run any raw AXL operation |
+| `operations` | List available operations with `--filter` and `--type crud\|action` |
+| `describe <operation>` | Show tag schema with `--detailed` for required/optional/type info |
 
-**Environment variable (simple):**
+### Configuration
 
-```env
-DEBUG=true
+```bash
+# Multiple clusters
+cisco-axl config add lab --host 10.0.0.1 --username admin --password secret --cucm-version 14.0 --insecure
+cisco-axl config add prod --host 10.0.0.2 --username axladmin --password secret --cucm-version 15.0 --insecure
+cisco-axl config use prod
+cisco-axl config list
+
+# Per-command cluster override
+cisco-axl list Phone --search "name=SEP%" --cluster lab
+
+# Environment variables (CI/CD, AI agents)
+export CUCM_HOST=10.0.0.1 CUCM_USERNAME=admin CUCM_PASSWORD=secret CUCM_VERSION=14.0
 ```
 
-**Constructor options (advanced):**
+Config stored at `~/.cisco-axl/config.json`. Supports optional [Secret Server](https://github.com/sieteunoseis/ss-cli) integration via `<ss:ID:field>` placeholders.
 
-```javascript
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
-  logging: {
-    level: "info",  // "error" | "warn" | "info" | "debug"
-    handler: (level, message, data) => {
-      // Custom log handler — send to your logging framework, file, etc.
-      myLogger[level](message, data);
-    }
-  }
-});
+### Output Formats
 
-// Change level at runtime
-service.setLogLevel("debug");
+```bash
+cisco-axl list Phone --search "name=SEP%" --format table  # default, human-readable
+cisco-axl list Phone --search "name=SEP%" --format json   # structured JSON
+cisco-axl list Phone --search "name=SEP%" --format toon   # token-efficient for AI agents
+cisco-axl list Phone --search "name=SEP%" --format csv    # spreadsheet export
 ```
 
-Log levels: `error` < `warn` < `info` < `debug`. Default level is `error` (or `debug` if `DEBUG` env var is truthy).
+### Bulk Operations from CSV
 
-## Features
+Requires optional packages: `npm install json-variables csv-parse`
 
-- Uses strong-soap to parse the AXL WSDL file — any AXL function for your specified version is available
-- Promise-based API with async/await support
-- Returns JSON, with optional cleaning of empty/null fields and attribute removal
-- [json-variables](https://codsen.com/os/json-variables) support for template-based operations
-- TypeScript support with full type definitions
-- ESM and CommonJS dual-package support
-- Custom error classes (`AXLAuthError`, `AXLOperationError`, `AXLNotFoundError`, `AXLValidationError`)
-- Retry mechanism with exponential backoff for transient network errors
-- Batch operations with concurrency control (`executeBatch`)
-- Convenience methods for common CRUD operations (`getItem`, `listItems`, `addItem`, `updateItem`, `removeItem`)
-- SQL query/update helpers (`executeSqlQuery`, `executeSqlUpdate`)
-- Detailed tag metadata including required/nillable/type info (`getOperationTagsDetailed`)
-- Configurable logging with levels and custom handlers
-- SOAP client caching for improved performance
-- Input parameter validation with descriptive error messages
-- Authentication testing with the `testAuthentication` method
+```bash
+# Bulk add phones from template + CSV
+cisco-axl add Phone --template phone-template.json --csv phones.csv
+cisco-axl add Phone --template phone-template.json --csv phones.csv --dry-run  # preview first
 
-## Usage
+# Single template with inline vars
+cisco-axl add Phone --template phone-template.json --vars '{"mac":"001122334455","dp":"DP_HQ"}'
+```
+
+Template file (`phone-template.json`):
+```json
+{
+  "name": "SEP%%mac%%",
+  "devicePoolName": "%%devicePool%%",
+  "description": "%%description%%",
+  "protocol": "SIP"
+}
+```
+
+### Global Flags
+
+```
+--format table|json|toon|csv   Output format (default: table)
+--insecure                     Skip TLS certificate verification
+--clean                        Remove empty/null values from results
+--no-attributes                Remove XML attributes from results
+--read-only                    Restrict to read-only operations
+--no-audit                     Disable audit logging for this command
+--debug                        Enable debug logging
+```
+
+### Audit Trail
+
+All operations are logged to `~/.cisco-axl/audit.jsonl` (JSONL format). Credentials are never logged. Use `--no-audit` to skip.
+
+## Library API
+
+### Setup
 
 ```javascript
 const axlService = require("cisco-axl");
 
 let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
 
-// Low-level: executeOperation
-var tags = {
-  routePartition: {
-    name: "INTERNAL-PT",
-    description: "Internal directory numbers",
-  },
-};
-
-service
-  .executeOperation("addRoutePartition", tags)
-  .then((results) => {
-    console.log("addRoutePartition UUID", results);
-  })
-  .catch((error) => {
-    console.log(error);
-  });
-
-// Convenience methods (v1.5.0+)
-await service.addItem("RoutePartition", { name: "INTERNAL-PT", description: "Internal" });
-await service.listItems("RoutePartition");
-await service.getItem("RoutePartition", "INTERNAL-PT");
-await service.updateItem("RoutePartition", "INTERNAL-PT", { description: "Updated" });
-await service.removeItem("RoutePartition", "INTERNAL-PT");
-
-// SQL queries
-await service.executeSqlQuery("SELECT name FROM routepartition");
-
-// Batch operations
-const results = await service.executeBatch([
-  { operation: "getRoutePartition", tags: { name: "INTERNAL-PT" } },
-  { operation: "getRoutePartition", tags: { name: "EXTERNAL-PT" } },
-], 5); // concurrency limit
-```
-
-## Methods
-
-### Core
-
-- `new axlService(host, username, password, version, options?)`
-- `service.testAuthentication()`
-- `service.returnOperations(filter?)`
-- `service.getOperationTags(operation)`
-- `service.getOperationTagsDetailed(operation)`
-- `service.executeOperation(operation, tags, opts?)`
-- `service.executeBatch(operations, concurrency?)`
-- `service.setLogLevel(level)`
-
-### Convenience
-
-- `service.getItem(itemType, identifier, opts?)`
-- `service.listItems(itemType, searchCriteria?, returnedTags?, opts?)`
-- `service.addItem(itemType, data, opts?)`
-- `service.updateItem(itemType, identifier, updates, opts?)`
-- `service.removeItem(itemType, identifier, opts?)`
-- `service.executeSqlQuery(sql)`
-- `service.executeSqlUpdate(sql)`
-
-### new axlService(host, username, password, version, options?)
-
-Service constructor. Requires hostname, username, password, and version. Optional configuration for logging and retry behavior.
-
-```node
-// Basic usage
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
-
 // With options
 let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
   logging: { level: "info" },
-  retry: { retries: 3, retryDelay: 1000 }  // exponential backoff for transient errors
+  retry: { retries: 3, retryDelay: 1000 }
 });
 ```
 
-Supported versions: `11.0`, `11.5`, `12.0`, `12.5`, `14.0`, `15.0`
-
-### service.testAuthentication() ⇒ Returns promise
-
-Tests the authentication credentials against the AXL endpoint. Returns a promise that resolves to `true` if authentication is successful, or rejects with an error if authentication fails.
-
-```node
-service.testAuthentication()
-  .then((success) => {
-    console.log('Authentication successful');
-  })
-  .catch((error) => {
-    console.error('Authentication failed:', error.message);
-  });
-```
-
-### service.returnOperations(filter?) ⇒ Returns promise
-
-Method takes optional argument to filter results. No argument returns all operations. Returns results via Promise.
-
-| Method           | Argument | Type   | Obligatory | Description                         |
-| :--------------- | :------- | :----- | :--------- | :---------------------------------- |
-| returnOperations | filter   | string | No         | Provide a string to filter results. |
-
-### service.getOperationTags(operation) ⇒ Returns promise
-
-Method requires passing an AXL operation. Returns results via Promise.
-
-| Method           | Argument  | Type   | Obligatory | Description                                                              |
-| :--------------- | :-------- | :----- | :--------- | :----------------------------------------------------------------------- |
-| getOperationTags | operation | string | Yes        | Provide the name of the AXL operation you wish to retrieve the tags for. |
-
-### service.getOperationTagsDetailed(operation) ⇒ Returns promise
-
-Method requires passing an AXL operation. Returns detailed metadata for each tag including whether it is required, nillable, an array type, and its XSD type. Child elements are returned recursively.
-
-| Method                   | Argument  | Type   | Obligatory | Description                                                              |
-| :----------------------- | :-------- | :----- | :--------- | :----------------------------------------------------------------------- |
-| getOperationTagsDetailed | operation | string | Yes        | Provide the name of the AXL operation you wish to retrieve the tags for. |
-
-Each tag in the returned object has the following structure:
-
-| Property | Type             | Description                                       |
-| :------- | :--------------- | :------------------------------------------------ |
-| name     | string           | Tag name                                          |
-| required | boolean          | Whether the tag is required (based on minOccurs)  |
-| nillable | boolean          | Whether the tag accepts null values               |
-| isMany   | boolean          | Whether the tag can appear multiple times (array) |
-| type     | string \| null   | XSD type name (e.g. "string", "XRoutePartition")  |
-| children | object \| null   | Nested tag metadata, or null for leaf elements    |
-
-Example:
+### Logging
 
 ```javascript
-service.getOperationTagsDetailed("addRoutePartition").then((tags) => {
-  console.log(tags.routePartition.required);         // true
-  console.log(tags.routePartition.children.name.nillable); // true
-  console.log(tags.routePartition.children.name.type);     // "string"
-});
-```
+// Via environment variable
+// DEBUG=true
 
-### service.executeOperation(operation,tags,opts?) ⇒ Returns promise
-
-Method requires passing an AXL operation and JSON object of tags. Returns results via Promise.
-
-Current options include:
-| option | type | description |
-| :--------------------------- | :------ | :---------------------------------------------------------------------------------- |
-| clean | boolean | Default: **false**. Allows method to remove all tags that have no values from return data. |
-| removeAttributes | boolean | Default: **false**. Allows method to remove all attributes tags return data. |
-| dataContainerIdentifierTails | string | Default: **'\_data'**. executeOperation will automatically remove any tag with the defined string. This is used with json-variables library. |
-
-Example:
-
-```node
-var opts = {
-  clean: true,
-  removeAttributes: false,
-  dataContainerIdentifierTails: "_data",
-};
-```
-
-| Method           | Argument  | Type   | Obligatory | Description                                                |
-| :--------------- | :-------- | :----- | :--------- | :--------------------------------------------------------- |
-| executeOperation | operation | string | Yes        | Provide the name of the AXL operation you wish to execute. |
-| executeOperation | tags      | object | Yes        | Provide a JSON object of the tags for your operation.      |
-| executeOperation | opts      | object | No         | Provide a JSON object of options for your operation.       |
-
-### service.executeBatch(operations, concurrency?) ⇒ Returns promise
-
-Executes multiple AXL operations in parallel with concurrency control. Returns an array of `BatchResult` objects in the same order as the input.
-
-```javascript
-const results = await service.executeBatch([
-  { operation: "getPhone", tags: { name: "SEP001122334455" } },
-  { operation: "getPhone", tags: { name: "SEP556677889900" } },
-  { operation: "getLine", tags: { pattern: "1001", routePartitionName: "INTERNAL-PT" } },
-], 3); // max 3 concurrent requests
-
-results.forEach((r) => {
-  if (r.success) {
-    console.log(`${r.operation}: OK`, r.result);
-  } else {
-    console.log(`${r.operation}: FAILED`, r.error.message);
+// Via constructor
+let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
+  logging: {
+    level: "info",  // "error" | "warn" | "info" | "debug"
+    handler: (level, message, data) => {
+      myLogger[level](message, data);
+    }
   }
 });
+
+// Change at runtime
+service.setLogLevel("debug");
 ```
 
 ### Convenience Methods
-
-These methods simplify common CRUD operations. The `itemType` parameter is the PascalCase AXL type (e.g. `"Phone"`, `"Line"`, `"RoutePartition"`).
 
 ```javascript
 // Get a single item by name or UUID
 await service.getItem("Phone", "SEP001122334455");
 await service.getItem("Phone", { uuid: "abc-123" });
 
-// List items with search criteria
+// List items with search criteria and returned tags
 await service.listItems("RoutePartition");  // all partitions
-await service.listItems("Phone", { name: "SEP%" });  // filtered
+await service.listItems("Phone", { name: "SEP%" }, { name: "", model: "" });
 
-// Add a new item
-await service.addItem("RoutePartition", { name: "NEW-PT", description: "New partition" });
-
-// Update an existing item
+// Add, update, remove
+await service.addItem("RoutePartition", { name: "NEW-PT", description: "New" });
 await service.updateItem("Phone", "SEP001122334455", { description: "Updated" });
-
-// Remove an item
 await service.removeItem("RoutePartition", "NEW-PT");
 
-// SQL operations
-const rows = await service.executeSqlQuery("SELECT name, description FROM routepartition");
+// SQL
+const rows = await service.executeSqlQuery("SELECT name FROM routepartition");
 await service.executeSqlUpdate("UPDATE routepartition SET description='test' WHERE name='NEW-PT'");
 ```
 
-## Error Handling
+### Operation Discovery
 
-All errors extend the base `AXLError` class. You can catch specific error types:
+```javascript
+// List all operations
+const ops = await service.returnOperations();
+const phoneOps = await service.returnOperations("phone");
+
+// Get tag schema
+const tags = await service.getOperationTags("addRoutePartition");
+
+// Get detailed metadata (required, nillable, type)
+const detailed = await service.getOperationTagsDetailed("addRoutePartition");
+console.log(detailed.routePartition.required);  // true
+console.log(detailed.routePartition.children.name.type);  // "string"
+```
+
+### Execute Any Operation
+
+```javascript
+const tags = await service.getOperationTags("addRoutePartition");
+tags.routePartition.name = "INTERNAL-PT";
+tags.routePartition.description = "Internal directory numbers";
+
+const result = await service.executeOperation("addRoutePartition", tags);
+console.log("UUID:", result);
+```
+
+### Batch Operations
+
+```javascript
+const results = await service.executeBatch([
+  { operation: "getPhone", tags: { name: "SEP001122334455" } },
+  { operation: "getPhone", tags: { name: "SEP556677889900" } },
+], 5); // concurrency limit
+
+results.forEach((r) => {
+  console.log(r.success ? `${r.operation}: OK` : `${r.operation}: ${r.error.message}`);
+});
+```
+
+### Error Handling
 
 ```javascript
 const { AXLAuthError, AXLNotFoundError, AXLOperationError, AXLValidationError } = require("cisco-axl");
@@ -300,38 +254,26 @@ const { AXLAuthError, AXLNotFoundError, AXLOperationError, AXLValidationError } 
 try {
   await service.executeOperation("getPhone", { name: "INVALID" });
 } catch (error) {
-  if (error instanceof AXLAuthError) {
-    console.log("Bad credentials");
-  } else if (error instanceof AXLNotFoundError) {
-    console.log("Operation not found:", error.operation);
-  } else if (error instanceof AXLOperationError) {
-    console.log("SOAP fault:", error.message, error.faultCode);
-  } else if (error instanceof AXLValidationError) {
-    console.log("Invalid input:", error.message);
-  }
+  if (error instanceof AXLAuthError) console.log("Bad credentials");
+  else if (error instanceof AXLNotFoundError) console.log("Operation not found:", error.operation);
+  else if (error instanceof AXLOperationError) console.log("SOAP fault:", error.message);
+  else if (error instanceof AXLValidationError) console.log("Invalid input:", error.message);
 }
 ```
 
-## Retry Configuration
-
-Transient network errors (ECONNRESET, ETIMEDOUT, etc.) can be automatically retried with exponential backoff:
+### Retry Configuration
 
 ```javascript
 let service = new axlService("10.10.20.1", "admin", "pass", "14.0", {
   retry: {
-    retries: 3,        // max retry attempts (default: 0 = disabled)
-    retryDelay: 1000,  // base delay in ms, doubles each attempt (default: 1000)
-    retryOn: (error) => {
-      // Custom function to determine if error is retryable (optional)
-      return error.message.includes("ECONNRESET");
-    }
+    retries: 3,
+    retryDelay: 1000,
+    retryOn: (error) => error.message.includes("ECONNRESET")
   }
 });
 ```
 
-## ESM Support
-
-This library supports both CommonJS and ES modules:
+### ESM Support
 
 ```javascript
 // CommonJS
@@ -342,32 +284,12 @@ import axlService from "cisco-axl";
 import { AXLAuthError, AXLOperationError } from "cisco-axl";
 ```
 
-## Examples
-
-Check **examples** folder for different ways to use this library. Each folder should have a **README** to explain about each example.
-
-You can also run the **tests.js** against Cisco's DevNet sandbox so see how each various method works.
+### json-variables Support
 
 ```javascript
-npm run test
-```
-
-Note: Test are using Cisco's DevNet sandbox information. Find more information here: [Cisco DevNet](https://devnetsandbox.cisco.com/).
-
-## json-variables support
-
-At a tactical level, json-variables program lets you take a plain object (JSON files contents) and add special markers in any value which you can then reference in a different path.
-
-This library will recoginize json-variables **\*\_data** keys in the tags and delete before executing the operation.
-
-Example:
-
-```node
 var lineTemplate = {
   pattern: "%%_extension_%%",
-  routePartitionName: "",
   alertingName: "%%_firstName_%% %%_lastName_%%",
-  asciiAlertingName: "%%_firstName_%% %%_lastName_%%",
   description: "%%_firstName_%% %%_lastName_%%",
   _data: {
     extension: "1001",
@@ -377,70 +299,59 @@ var lineTemplate = {
 };
 
 const lineTags = jVar(lineTemplate);
-
-service
-  .executeOperation("updateLine", lineTags)
-  .then((results) => {
-    console.log(results);
-  })
-  .catch((error) => {
-    console.log(error);
-  });
+await service.executeOperation("updateLine", lineTags);
 ```
 
-Note: If you need to change the variables key you can so via options in both the json-variables and with executeOperations.
+## Methods Reference
 
-Example:
+### Core
 
-```node
-...
-const lineTags = jVar(lineTemplate,{ dataContainerIdentifierTails: "_variables"});
+| Method | Description |
+|--------|-------------|
+| `new axlService(host, user, pass, version, opts?)` | Constructor |
+| `testAuthentication()` | Test credentials against AXL endpoint |
+| `returnOperations(filter?)` | List available operations |
+| `getOperationTags(operation)` | Get tag schema for an operation |
+| `getOperationTagsDetailed(operation)` | Get detailed tag metadata (required/nillable/type) |
+| `executeOperation(operation, tags, opts?)` | Execute any AXL operation |
+| `executeBatch(operations[], concurrency?)` | Parallel batch execution |
+| `setLogLevel(level)` | Change log level at runtime |
 
-service.executeOperation("updateLine", lineTags,{ dataContainerIdentifierTails: "_variables"})
-...
+### Convenience
+
+| Method | Description |
+|--------|-------------|
+| `getItem(type, identifier, opts?)` | Get single item by name or UUID |
+| `listItems(type, search?, returnedTags?, opts?)` | List items with filtering |
+| `addItem(type, data, opts?)` | Add a new item |
+| `updateItem(type, identifier, updates, opts?)` | Update an existing item |
+| `removeItem(type, identifier, opts?)` | Remove an item |
+| `executeSqlQuery(sql)` | Run a SQL SELECT query |
+| `executeSqlUpdate(sql)` | Run a SQL INSERT/UPDATE/DELETE |
+
+## Examples
+
+Check the **examples** folder for different ways to use this library.
+
+Run the integration tests against a CUCM cluster:
+
+```bash
+npm run staging
 ```
-
-## Limitations
-
-~~Currently there is an issue with strong-soap regarding returning nillable values for element tags.~~ As of v1.5.0, the `getOperationTagsDetailed()` method works around the strong-soap limitation by accessing raw WSDL element metadata to return `required`, `nillable`, `isMany`, and `type` information for each tag.
 
 ## TypeScript Support
-
-This library includes TypeScript declarations to provide type safety and improved developer experience.
-
-### TypeScript Usage
 
 ```typescript
 import axlService from 'cisco-axl';
 
-const service = new axlService(
-  "10.10.20.1",
-  "administrator",
-  "ciscopsdt",
-  "14.0"
-);
+const service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
 
-async function getPartitions() {
-  try {
-    const operation = "listRoutePartition";
-    const tags = await service.getOperationTags(operation);
-    tags.searchCriteria.name = "%%";
-    
-    const result = await service.executeOperation(operation, tags);
-    return result.routePartition;
-  } catch (error) {
-    console.error("Error fetching partitions:", error);
-    throw error;
-  }
-}
+const tags = await service.getOperationTags("listRoutePartition");
+tags.searchCriteria.name = "%%";
+const result = await service.executeOperation("listRoutePartition", tags);
 ```
 
-See the `examples/typescript` directory for more TypeScript examples.
-
-## TODO
-
-- Add example for reading in CSV and performing a bulk exercise with variables.
-- Add example for saving SQL output to CSV.
+See the `examples/typescript` directory for more examples.
 
 ## Giving Back
 
