@@ -263,15 +263,30 @@ function resolveSsValue(id, field) {
 
       try {
         const data = JSON.parse(stdout);
-        // ss-cli returns an object; find the field case-insensitively
         const fieldLower = field.toLowerCase();
+
+        // First: check top-level keys (simple key-value secrets)
         const foundKey = Object.keys(data).find(
           (k) => k.toLowerCase() === fieldLower
         );
-        if (foundKey === undefined) {
-          return reject(new Error(`Field "${field}" not found in ss-cli response for secret ${id}`));
+        if (foundKey !== undefined) {
+          return resolve(data[foundKey]);
         }
-        resolve(data[foundKey]);
+
+        // Second: check items array (Secret Server template secrets)
+        // Items have fieldName, slug, and itemValue properties
+        if (Array.isArray(data.items)) {
+          const item = data.items.find(
+            (i) =>
+              (i.slug && i.slug.toLowerCase() === fieldLower) ||
+              (i.fieldName && i.fieldName.toLowerCase() === fieldLower)
+          );
+          if (item) {
+            return resolve(item.itemValue);
+          }
+        }
+
+        return reject(new Error(`Field "${field}" not found in secret ${id}`));
       } catch (parseErr) {
         reject(new Error(`Failed to parse ss-cli output for secret ${id}: ${parseErr.message}`));
       }
