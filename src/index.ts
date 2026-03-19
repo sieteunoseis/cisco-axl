@@ -910,7 +910,7 @@ class axlService {
                 return;
               }
 
-              if (body && typeof body === "string" && (body.includes("Authentication failed") || body.includes("401 Unauthorized") || body.includes("403 Forbidden"))) {
+              if (body && typeof body === "string" && (body.includes("Authentication failed") || body.includes("401 Unauthorized") || body.includes("403 Forbidden") || body.includes("HTTP Status 401") || body.includes("HTTP Status 403"))) {
                 reject(new AXLAuthError());
                 return;
               }
@@ -1002,9 +1002,29 @@ class axlService {
 
           this._log.debug(`Operation ${operation} executed successfully`);
 
-          if (rawResponse && typeof rawResponse === "string" && (rawResponse.includes("Authentication failed") || rawResponse.includes("401 Unauthorized") || rawResponse.includes("403 Forbidden"))) {
-            reject(new AXLAuthError());
-            return;
+          if (rawResponse && typeof rawResponse === "string") {
+            // Detect auth failures in raw response (CUCM returns HTML error pages for 401/403)
+            if (
+              rawResponse.includes("Authentication failed") ||
+              rawResponse.includes("401 Unauthorized") ||
+              rawResponse.includes("403 Forbidden") ||
+              rawResponse.includes("HTTP Status 401") ||
+              rawResponse.includes("HTTP Status 403")
+            ) {
+              this._log.debug(`Authentication failure detected in raw response for ${operation}`);
+              reject(new AXLAuthError());
+              return;
+            }
+
+            // Detect non-SOAP responses (e.g., HTML error pages) when result is null
+            if (!result && rawResponse.includes("<html>")) {
+              this._log.debug(`Received HTML error page instead of SOAP response for ${operation}`);
+              const titleMatch = rawResponse.match(/<title>\s*(.*?)\s*<\/title>/i);
+              const descMatch = rawResponse.match(/<b>\s*Description:\s*<\/b>\s*(.*?)\s*<\/p>/i);
+              const errorMsg = descMatch?.[1] || titleMatch?.[1] || "Server returned an HTML error page instead of a SOAP response";
+              reject(new AXLOperationError(errorMsg, operation));
+              return;
+            }
           }
 
           if (result?.hasOwnProperty("return")) {
