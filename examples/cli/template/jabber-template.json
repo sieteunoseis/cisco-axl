@@ -1,0 +1,26 @@
+{
+  "name": "J%%userid%%",
+  "description": "%%lastName%%,%%firstName%% %%shortExt%% (Jabber)",
+  "product": "Cisco Unified Client Services Framework",
+  "model": "Cisco Unified Client Services Framework",
+  "class": "Phone",
+  "protocol": "SIP",
+  "protocolSide": "User",
+  "callingSearchSpaceName": "%%css%%",
+  "devicePoolName": "%%devicePool%%",
+  "commonPhoneConfigName": "Standard Common Phone Profile",
+  "securityProfileName": "Cisco Unified Client Services Framework - Standard SIP Non-Secure Profile",
+  "sipProfileName": "Standard SIP Profile",
+  "ownerUserName": "%%userid%%",
+  "lines": {
+    "line": {
+      "index": "1",
+      "label": "%%firstName%% %%shortExt%%",
+      "display": "%%lastName%%,%%firstName%%",
+      "dirn": {
+        "pattern": "%%extension%%",
+        "routePartitionName": "%%routePartition%%"
+      }
+    }
+  }
+}

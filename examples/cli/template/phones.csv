@@ -1,0 +1,4 @@
+mac,userid,firstName,lastName,extension,shortExt,devicePool,css,routePartition
+001122334455,jsmith,John,Smith,5551001,1-001,DP_HQ,CSS_Standard,OnNet
+001122334466,jdoe,Jane,Doe,5551002,1-002,DP_HQ,CSS_Standard,OnNet
+001122334477,mbrown,Mike,Brown,5551003,1-003,DP_BRANCH,CSS_Standard,OnNet

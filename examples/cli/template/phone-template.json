@@ -1,0 +1,26 @@
+{
+  "name": "SEP%%mac%%",
+  "description": "%%lastName%%,%%firstName%% %%shortExt%%",
+  "product": "Cisco 8845",
+  "model": "Cisco 8845",
+  "class": "Phone",
+  "protocol": "SIP",
+  "protocolSide": "User",
+  "callingSearchSpaceName": "%%css%%",
+  "devicePoolName": "%%devicePool%%",
+  "commonPhoneConfigName": "Standard Common Phone Profile",
+  "securityProfileName": "Cisco 8845 - Standard SIP Non-Secure Profile",
+  "sipProfileName": "Standard SIP Profile",
+  "ownerUserName": "%%userid%%",
+  "lines": {
+    "line": {
+      "index": "1",
+      "label": "%%firstName%% %%shortExt%%",
+      "display": "%%lastName%%,%%firstName%%",
+      "dirn": {
+        "pattern": "%%extension%%",
+        "routePartitionName": "%%routePartition%%"
+      }
+    }
+  }
+}
