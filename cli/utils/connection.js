@@ -119,9 +119,13 @@ async function resolveConfig(flags = {}) {
 async function createService(flags = {}) {
   const config = await resolveConfig(flags);
 
-  // Handle --insecure flag
+  // Handle --insecure flag — suppress Node's TLS warning since user opted in
   if (config.insecure || flags.insecure) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    process.emitWarning = ((orig) => function (warning, ...args) {
+      if (typeof warning === "string" && warning.includes("NODE_TLS_REJECT_UNAUTHORIZED")) return;
+      return orig.call(process, warning, ...args);
+    })(process.emitWarning);
   }
 
   // Build axlService options
