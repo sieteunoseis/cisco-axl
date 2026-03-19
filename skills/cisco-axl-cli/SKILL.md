@@ -7,6 +7,21 @@ description: Use when managing Cisco CUCM via the cisco-axl CLI — phones, line
 
 A CLI for Cisco Unified Communications Manager (CUCM) Administrative XML (AXL) operations.
 
+## Prerequisites
+
+The CLI must be available. Either:
+
+```bash
+# Option 1: Use npx (no install needed, works immediately)
+npx cisco-axl --help
+
+# Option 2: Install globally for faster repeated use
+npm install -g cisco-axl
+```
+
+If using npx, prefix all commands with `npx`: `npx cisco-axl list Phone ...`
+If installed globally, use directly: `cisco-axl list Phone ...`
+
 ## Setup
 
 Configure a CUCM cluster:
