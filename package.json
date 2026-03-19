@@ -12,6 +12,9 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "bin": {
+    "cisco-axl": "./bin/cisco-axl.js"
+  },
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
@@ -32,7 +35,9 @@
     "axl",
     "soap",
     "xml",
-    "callmanager"
+    "callmanager",
+    "cli",
+    "cucm"
   ],
   "author": "Jeremy Worden",
   "license": "MIT",
@@ -41,6 +46,10 @@
   },
   "homepage": "https://github.com/sieteunoseis/cisco-axl#readme",
   "dependencies": {
+    "@toon-format/toon": "^2.1.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.3",
+    "csv-stringify": "^6.7.0",
     "strong-soap": "^4.1.5"
   },
   "devDependencies": {
