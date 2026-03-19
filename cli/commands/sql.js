@@ -7,6 +7,7 @@
 
 const { createService } = require("../utils/connection.js");
 const { printResult, printError } = require("../utils/output.js");
+const { enforceReadOnly } = require("../utils/readonly.js");
 
 /**
  * Registers the sql command (with query and update subcommands) on the given Commander program.
@@ -74,6 +75,8 @@ module.exports = function registerSqlCommand(program) {
       let errorMsg;
 
       try {
+        enforceReadOnly(globalOpts, "sql update");
+
         const service = await createService(globalOpts);
         const opts = {
           clean: globalOpts.clean || false,

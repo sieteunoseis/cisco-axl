@@ -50,14 +50,13 @@
     "cli-table3": "^0.6.5",
     "commander": "^14.0.3",
     "csv-stringify": "^6.7.0",
-    "strong-soap": "^4.1.5"
+    "strong-soap": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^22.19.15",
     "dotenv": "*",
     "envalid": "*",
     "json-variables": "^10.1.0",
-    "node-emoji": "*",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

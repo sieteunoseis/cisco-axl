@@ -9,6 +9,7 @@
 
 const { createService } = require("../utils/connection.js");
 const { printResult, printError } = require("../utils/output.js");
+const { enforceReadOnly } = require("../utils/readonly.js");
 
 /**
  * Registers the execute command on the given Commander program.
@@ -31,6 +32,8 @@ module.exports = function registerExecuteCommand(program) {
       let errorMsg;
 
       try {
+        enforceReadOnly(globalOpts, "execute");
+
         // Validate mutual exclusivity
         if (cmdOpts.tags && cmdOpts.template) {
           throw new Error("--tags and --template are mutually exclusive");

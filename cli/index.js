@@ -19,6 +19,7 @@ program
   .option("--no-attributes", "remove XML attributes from results")
   .option("--insecure", "skip TLS certificate verification")
   .option("--no-audit", "disable audit logging for this command")
+  .option("--read-only", "restrict to read-only operations (get, list, describe, operations, sql query)")
   .option("--debug", "enable debug logging");
 
 // Register commands

@@ -7,6 +7,7 @@
 
 const { createService } = require("../utils/connection.js");
 const { printResult, printError } = require("../utils/output.js");
+const { enforceReadOnly } = require("../utils/readonly.js");
 
 /**
  * Registers the remove command on the given Commander program.
@@ -23,6 +24,8 @@ module.exports = function registerRemoveCommand(program) {
       let errorMsg;
 
       try {
+        enforceReadOnly(globalOpts, "remove");
+
         const service = await createService(globalOpts);
         const opts = {
           clean: globalOpts.clean || false,

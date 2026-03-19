@@ -9,6 +9,7 @@
 
 const { createService } = require("../utils/connection.js");
 const { printResult, printError } = require("../utils/output.js");
+const { enforceReadOnly } = require("../utils/readonly.js");
 
 /**
  * Registers the add command on the given Commander program.
@@ -31,6 +32,8 @@ module.exports = function registerAddCommand(program) {
       let errorMsg;
 
       try {
+        enforceReadOnly(globalOpts, "add");
+
         // Validate mutual exclusivity
         if (cmdOpts.data && cmdOpts.template) {
           throw new Error("--data and --template are mutually exclusive");
