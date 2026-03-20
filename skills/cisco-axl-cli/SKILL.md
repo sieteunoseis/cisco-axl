@@ -24,18 +24,20 @@ If installed globally, use directly: `cisco-axl list Phone ...`
 
 ## Setup
 
-Configure a CUCM cluster:
+Configure a CUCM cluster (interactive prompt for password — never pass credentials on the command line):
 
 ```bash
-cisco-axl config add <name> --host <hostname> --username <user> --password <pass> --cucm-version <ver> --insecure
+cisco-axl config add <name> --host <hostname> --username <user> --cucm-version <ver> --insecure
+# You will be prompted securely for the password
 ```
 
 Valid versions: 11.0, 11.5, 12.0, 12.5, 14.0, 15.0. Use `--insecure` for self-signed certificates (common in CUCM).
 
-Or use environment variables:
+Or use environment variables (set via your shell profile, a `.env` file, or a secrets manager — never hardcode credentials):
 
 ```bash
-export CUCM_HOST=10.0.0.1 CUCM_USERNAME=admin CUCM_PASSWORD=secret CUCM_VERSION=14.0
+# These should be set securely, e.g. via dotenv, vault, or shell profile
+# CUCM_HOST, CUCM_USERNAME, CUCM_PASSWORD, CUCM_VERSION
 ```
 
 Test the connection:
@@ -176,8 +178,9 @@ Use `--format` to control output:
 ## Multiple Clusters
 
 ```bash
-cisco-axl config add lab --host 10.0.0.1 --username admin --password pass --cucm-version 14.0 --insecure
-cisco-axl config add prod --host 10.0.0.2 --username axladmin --password pass --cucm-version 15.0 --insecure
+cisco-axl config add lab --host 10.0.0.1 --username admin --cucm-version 14.0 --insecure
+cisco-axl config add prod --host 10.0.0.2 --username axladmin --cucm-version 15.0 --insecure
+# You will be prompted securely for each password
 cisco-axl config use prod
 cisco-axl list Phone --search "name=SEP%" --cluster lab    # override per-command
 ```
