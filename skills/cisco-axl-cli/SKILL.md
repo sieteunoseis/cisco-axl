@@ -182,6 +182,34 @@ cisco-axl config use prod
 cisco-axl list Phone --search "name=SEP%" --cluster lab    # override per-command
 ```
 
+## Command Chaining
+
+Shell `&&` chains commands sequentially — each waits for the previous to complete, and the chain stops on the first failure:
+
+```bash
+# Create a partition, CSS, and line in order
+cisco-axl add RoutePartition --data '{"name":"PT_INTERNAL","description":"Internal"}' && \
+cisco-axl add Css --data '{"name":"CSS_INTERNAL","members":{"member":{"routePartitionName":"PT_INTERNAL","index":"1"}}}' && \
+cisco-axl add Line --data '{"pattern":"1000","routePartitionName":"PT_INTERNAL"}'
+```
+
+## Piping with --stdin
+
+Use `--stdin` to pipe JSON between commands or from other tools:
+
+```bash
+# Get a phone's config, modify it with jq, update it
+cisco-axl get Phone SEP001122334455 --format json | jq '.description = "Updated via pipe"' | cisco-axl update Phone SEP001122334455 --stdin
+
+# Pipe JSON from a file
+cat phone-config.json | cisco-axl add Phone --stdin
+
+# Chain get → transform → execute
+cisco-axl describe applyPhone --format json | jq '.name = "SEP001122334455"' | cisco-axl execute applyPhone --stdin
+```
+
+The `--stdin` flag is available on `add`, `update`, and `execute` commands. It is mutually exclusive with `--data`/`--tags` and `--template`.
+
 ## Tips
 
 - Item types are PascalCase matching AXL: `Phone`, `Line`, `RoutePartition`, `Css`, `DevicePool`, `SipTrunk`, `TransPattern`, `RouteGroup`, `RouteList`, etc.

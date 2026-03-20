@@ -10,6 +10,7 @@
 const { createService } = require("../utils/connection.js");
 const { printResult, printError } = require("../utils/output.js");
 const { enforceReadOnly } = require("../utils/readonly.js");
+const { readStdin } = require("../utils/stdin.js");
 
 /**
  * Registers the add command on the given Commander program.
@@ -20,6 +21,7 @@ module.exports = function registerAddCommand(program) {
     .command("add <type>")
     .description("Add a new AXL item of the given type")
     .option("--data <json>", "JSON definition of the item to add")
+    .option("--stdin", "read JSON data from stdin (for piping)")
     .option("--template <file>", "JSON template file with %%var%% placeholders")
     .option("--vars <json>", "variables to resolve in template (JSON)")
     .option("--csv <file>", "CSV file for bulk operations (use with --template)")
@@ -34,12 +36,20 @@ module.exports = function registerAddCommand(program) {
       try {
         enforceReadOnly(globalOpts, "add");
 
-        // Validate mutual exclusivity
-        if (cmdOpts.data && cmdOpts.template) {
-          throw new Error("--data and --template are mutually exclusive");
+        // Read from stdin if --stdin flag is set
+        if (cmdOpts.stdin) {
+          const stdinData = await readStdin();
+          if (!stdinData) throw new Error("--stdin specified but no data piped. Pipe JSON via: echo '{...}' | cisco-axl add <type> --stdin");
+          cmdOpts.data = stdinData.trim();
         }
-        if (!cmdOpts.data && !cmdOpts.template) {
-          throw new Error("Either --data or --template must be provided");
+
+        // Validate mutual exclusivity
+        const inputCount = [cmdOpts.data, cmdOpts.template].filter(Boolean).length;
+        if (inputCount > 1) {
+          throw new Error("--data, --stdin, and --template are mutually exclusive");
+        }
+        if (inputCount === 0) {
+          throw new Error("Provide input via --data, --stdin, or --template");
         }
 
         const opts = {

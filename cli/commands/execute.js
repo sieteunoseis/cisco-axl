@@ -10,6 +10,7 @@
 const { createService } = require("../utils/connection.js");
 const { printResult, printError } = require("../utils/output.js");
 const { enforceReadOnly } = require("../utils/readonly.js");
+const { readStdin } = require("../utils/stdin.js");
 
 /**
  * Registers the execute command on the given Commander program.
@@ -20,6 +21,7 @@ module.exports = function registerExecuteCommand(program) {
     .command("execute <operation>")
     .description("Execute a raw AXL operation with JSON tags")
     .option("--tags <json>", "JSON object of operation tags")
+    .option("--stdin", "read JSON tags from stdin (for piping)")
     .option("--template <file>", "JSON template file with %%var%% placeholders")
     .option("--vars <json>", "variables to resolve in template (JSON)")
     .option("--csv <file>", "CSV file for bulk operations (use with --template)")
@@ -34,12 +36,20 @@ module.exports = function registerExecuteCommand(program) {
       try {
         enforceReadOnly(globalOpts, "execute");
 
-        // Validate mutual exclusivity
-        if (cmdOpts.tags && cmdOpts.template) {
-          throw new Error("--tags and --template are mutually exclusive");
+        // Read from stdin if --stdin flag is set
+        if (cmdOpts.stdin) {
+          const stdinData = await readStdin();
+          if (!stdinData) throw new Error("--stdin specified but no data piped. Pipe JSON via: echo '{...}' | cisco-axl execute <op> --stdin");
+          cmdOpts.tags = stdinData.trim();
         }
-        if (!cmdOpts.tags && !cmdOpts.template) {
-          throw new Error("Either --tags or --template must be provided");
+
+        // Validate mutual exclusivity
+        const inputCount = [cmdOpts.tags, cmdOpts.template].filter(Boolean).length;
+        if (inputCount > 1) {
+          throw new Error("--tags, --stdin, and --template are mutually exclusive");
+        }
+        if (inputCount === 0) {
+          throw new Error("Provide input via --tags, --stdin, or --template");
         }
 
         const opts = {
