@@ -14,38 +14,31 @@ const { createService } = require("../utils/connection.js");
  * @param {import("commander").Command} program
  */
 module.exports = function registerConfigCommand(program) {
-  const config = program.command("config").description("Manage CUCM cluster configuration");
+  const config = program
+    .command("config")
+    .description("Manage CUCM cluster configuration")
+    .passThroughOptions();
 
   // ── config add <name> ───────────────────────────────────────────────────────
 
   config
     .command("add <name>")
     .description("Add a named CUCM cluster to config")
+    .requiredOption("--host <host>", "CUCM hostname or IP")
+    .requiredOption("--username <user>", "AXL username")
+    .requiredOption("--password <pass>", "AXL password")
     .requiredOption("--cucm-version <ver>", "CUCM version (e.g. 14.0)")
+    .option("--insecure", "skip TLS verification for this cluster")
     .action((name, opts) => {
       try {
-        // --host, --username, --password, --insecure come from global program options
-        const globalOpts = program.opts();
-
-        const host = globalOpts.host;
-        const username = globalOpts.username;
-        const password = globalOpts.password;
-        const insecure = globalOpts.insecure;
-
-        if (!host) {
-          throw new Error("Missing required option: --host");
-        }
-        if (!username) {
-          throw new Error("Missing required option: --username");
-        }
-        if (!password) {
-          throw new Error("Missing required option: --password");
-        }
-
-        // Commander camelCases --cucm-version to cucmVersion; addCluster expects version
-        const clusterOpts = { host, username, password, version: opts.cucmVersion };
-        if (insecure !== undefined) {
-          clusterOpts.insecure = insecure;
+        const clusterOpts = {
+          host: opts.host,
+          username: opts.username,
+          password: opts.password,
+          version: opts.cucmVersion,
+        };
+        if (opts.insecure) {
+          clusterOpts.insecure = true;
         }
 
         configUtil.addCluster(name, clusterOpts);
