@@ -10,9 +10,10 @@ process.emitWarning = (warning, ...args) => {
   originalEmitWarning.call(process, warning, ...args);
 };
 
-import("update-notifier").then(({ default: updateNotifier }) => {
+try {
+  const updateNotifier = require("update-notifier").default || require("update-notifier");
   updateNotifier({ pkg }).notify();
-}).catch(() => {});
+} catch {};
 
 const program = new Command();
 
