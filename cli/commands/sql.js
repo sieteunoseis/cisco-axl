@@ -75,7 +75,7 @@ module.exports = function registerSqlCommand(program) {
       let errorMsg;
 
       try {
-        enforceReadOnly(globalOpts, "sql update");
+        await enforceReadOnly(globalOpts, "sql update");
 
         const service = await createService(globalOpts);
         const opts = {

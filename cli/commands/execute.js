@@ -34,7 +34,7 @@ module.exports = function registerExecuteCommand(program) {
       let errorMsg;
 
       try {
-        enforceReadOnly(globalOpts, "execute");
+        await enforceReadOnly(globalOpts, "execute");
 
         // Read from stdin if --stdin flag is set
         if (cmdOpts.stdin) {

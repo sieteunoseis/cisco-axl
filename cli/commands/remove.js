@@ -24,7 +24,7 @@ module.exports = function registerRemoveCommand(program) {
       let errorMsg;
 
       try {
-        enforceReadOnly(globalOpts, "remove");
+        await enforceReadOnly(globalOpts, "remove");
 
         const service = await createService(globalOpts);
         const opts = {

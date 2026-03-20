@@ -34,7 +34,7 @@ module.exports = function registerAddCommand(program) {
       let errorMsg;
 
       try {
-        enforceReadOnly(globalOpts, "add");
+        await enforceReadOnly(globalOpts, "add");
 
         // Read from stdin if --stdin flag is set
         if (cmdOpts.stdin) {

@@ -34,7 +34,7 @@ module.exports = function registerUpdateCommand(program) {
       let errorMsg;
 
       try {
-        enforceReadOnly(globalOpts, "update");
+        await enforceReadOnly(globalOpts, "update");
 
         // Read from stdin if --stdin flag is set
         if (cmdOpts.stdin) {
