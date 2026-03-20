@@ -1,14 +1,18 @@
 "use strict";
 
 const { Command } = require("commander");
-const { version } = require("../package.json");
+const pkg = require("../package.json");
+
+import("update-notifier").then(({ default: updateNotifier }) => {
+  updateNotifier({ pkg }).notify();
+}).catch(() => {});
 
 const program = new Command();
 
 program
   .name("cisco-axl")
   .description("CLI for Cisco CUCM AXL operations")
-  .version(version)
+  .version(pkg.version)
   .option("--format <type>", "output format: table, json, toon, csv", "table")
   .option("--host <host>", "CUCM hostname (overrides config/env)")
   .option("--username <user>", "CUCM username (overrides config/env)")
