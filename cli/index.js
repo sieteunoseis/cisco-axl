@@ -44,6 +44,7 @@ require("./commands/sql.js")(program);
 require("./commands/execute.js")(program);
 require("./commands/operations.js")(program);
 require("./commands/describe.js")(program);
+require("./commands/doctor.js")(program);
 // require("./commands/phone.js")(program);
 // require("./commands/line.js")(program);
 // require("./commands/user.js")(program);
