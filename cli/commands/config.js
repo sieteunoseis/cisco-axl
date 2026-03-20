@@ -16,28 +16,29 @@ const { createService } = require("../utils/connection.js");
 module.exports = function registerConfigCommand(program) {
   const config = program
     .command("config")
-    .description("Manage CUCM cluster configuration")
-    .passThroughOptions();
+    .description("Manage CUCM cluster configuration");
 
   // ── config add <name> ───────────────────────────────────────────────────────
 
   config
     .command("add <name>")
-    .description("Add a named CUCM cluster to config")
-    .requiredOption("--host <host>", "CUCM hostname or IP")
-    .requiredOption("--username <user>", "AXL username")
-    .requiredOption("--password <pass>", "AXL password")
-    .requiredOption("--cucm-version <ver>", "CUCM version (e.g. 14.0)")
+    .description("Add a named CUCM cluster to config (use --host, --username, --password, --version-cucm)")
+    .option("--cucm-version <ver>", "CUCM version (e.g. 14.0)")
     .option("--insecure", "skip TLS verification for this cluster")
-    .action((name, opts) => {
+    .action((name, opts, cmd) => {
       try {
-        const clusterOpts = {
-          host: opts.host,
-          username: opts.username,
-          password: opts.password,
-          version: opts.cucmVersion,
-        };
-        if (opts.insecure) {
+        const globalOpts = cmd.optsWithGlobals();
+        const host = globalOpts.host;
+        const username = globalOpts.username;
+        const password = globalOpts.password;
+        const version = opts.cucmVersion || globalOpts.versionCucm;
+        if (!host) throw new Error("Missing required option: --host");
+        if (!username) throw new Error("Missing required option: --username");
+        if (!password) throw new Error("Missing required option: --password");
+        if (!version) throw new Error("Missing required option: --cucm-version or --version-cucm");
+
+        const clusterOpts = { host, username, password, version };
+        if (opts.insecure || globalOpts.insecure) {
           clusterOpts.insecure = true;
         }
 

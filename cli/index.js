@@ -8,7 +8,6 @@ const program = new Command();
 program
   .name("cisco-axl")
   .description("CLI for Cisco CUCM AXL operations")
-  .enablePositionalOptions()
   .version(version)
   .option("--format <type>", "output format: table, json, toon, csv", "table")
   .option("--host <host>", "CUCM hostname (overrides config/env)")
