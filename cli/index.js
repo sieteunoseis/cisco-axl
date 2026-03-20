@@ -3,6 +3,13 @@
 const { Command } = require("commander");
 const pkg = require("../package.json");
 
+// Suppress Node.js TLS warning when --insecure is used
+const originalEmitWarning = process.emitWarning;
+process.emitWarning = (warning, ...args) => {
+  if (typeof warning === "string" && warning.includes("NODE_TLS_REJECT_UNAUTHORIZED")) return;
+  originalEmitWarning.call(process, warning, ...args);
+};
+
 import("update-notifier").then(({ default: updateNotifier }) => {
   updateNotifier({ pkg }).notify();
 }).catch(() => {});
