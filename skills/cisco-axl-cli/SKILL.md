@@ -1,13 +1,17 @@
 ---
 name: cisco-axl-cli
 description: Use when managing Cisco CUCM via the cisco-axl CLI — phones, lines, route patterns, partitions, calling search spaces, SIP profiles, and any AXL operation. Covers CRUD operations, SQL queries, operation discovery, bulk provisioning from CSV, and raw AXL execute commands.
+license: MIT
+metadata:
+  author: sieteunoseis
+  version: "1.0.0"
 ---
 
 # Cisco AXL CLI
 
 A CLI for Cisco Unified Communications Manager (CUCM) Administrative XML (AXL) operations.
 
-## Prerequisites
+## Setup
 
 The CLI must be available. Either:
 
@@ -22,7 +26,7 @@ npm install -g cisco-axl
 If using npx, prefix all commands with `npx`: `npx cisco-axl list Phone ...`
 If installed globally, use directly: `cisco-axl list Phone ...`
 
-## Setup
+### Configuration
 
 Configure a CUCM cluster (interactive prompt for password — never pass credentials on the command line):
 
@@ -46,7 +50,7 @@ Test the connection:
 cisco-axl config test
 ```
 
-## Common Operations
+## Common Workflows
 
 ### Get a single item
 
@@ -92,7 +96,7 @@ cisco-axl sql query "SELECT name, description FROM device WHERE name LIKE 'SEP%'
 cisco-axl sql update "UPDATE device SET description='test' WHERE name='SEP001122334455'"
 ```
 
-## Discovering Operations
+### Discovering Operations
 
 This is the CLI's most powerful feature. Discover and use ANY AXL operation dynamically — no static command definitions.
 
@@ -119,7 +123,7 @@ cisco-axl execute doLdapSync --tags '{"name":"LDAP_Main"}'
 cisco-axl execute applyPhone --tags '{"name":"SEP001122334455"}'
 ```
 
-## Bulk Operations from CSV
+### Bulk Operations from CSV
 
 For provisioning multiple items, use templates with CSV files. Requires optional packages: `npm install json-variables csv-parse`
 
@@ -175,7 +179,7 @@ Use `--format` to control output:
 
 **For AI agents:** Use `--format toon` for list queries to reduce token usage. Use `--format json` when you need to parse nested structures.
 
-## Multiple Clusters
+### Multiple Clusters
 
 ```bash
 cisco-axl config add lab --host 10.0.0.1 --username admin --cucm-version 14.0 --insecure
@@ -185,7 +189,7 @@ cisco-axl config use prod
 cisco-axl list Phone --search "name=SEP%" --cluster lab    # override per-command
 ```
 
-## Command Chaining
+### Command Chaining
 
 Shell `&&` chains commands sequentially — each waits for the previous to complete, and the chain stops on the first failure:
 
@@ -196,7 +200,7 @@ cisco-axl add Css --data '{"name":"CSS_INTERNAL","members":{"member":{"routePart
 cisco-axl add Line --data '{"pattern":"1000","routePartitionName":"PT_INTERNAL"}'
 ```
 
-## Piping with --stdin
+### Piping with --stdin
 
 Use `--stdin` to pipe JSON between commands or from other tools:
 
@@ -213,7 +217,7 @@ cisco-axl describe applyPhone --format json | jq '.name = "SEP001122334455"' | c
 
 The `--stdin` flag is available on `add`, `update`, and `execute` commands. It is mutually exclusive with `--data`/`--tags` and `--template`.
 
-## Tips
+## Global Flags
 
 - Item types are PascalCase matching AXL: `Phone`, `Line`, `RoutePartition`, `Css`, `DevicePool`, `SipTrunk`, `TransPattern`, `RouteGroup`, `RouteList`, etc.
 - Use `cisco-axl operations` to discover exact type names.
