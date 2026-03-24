@@ -42,11 +42,7 @@ If you are using self-signed certificates on Cisco VOS products you may need to 
 
 Supported CUCM versions: `11.0`, `11.5`, `12.0`, `12.5`, `14.0`, `15.0`
 
-## CLI
-
-The CLI provides full AXL access from the command line — CRUD operations, SQL queries, operation discovery, bulk provisioning from CSV, and a raw execute escape hatch for any AXL operation.
-
-### Quick Start
+## Quick Start
 
 ```bash
 # Configure a cluster
@@ -63,34 +59,9 @@ cisco-axl get Phone SEP001122334455 --returned-tags "name,model,description"
 
 # SQL query
 cisco-axl sql query "SELECT name, description FROM device WHERE name LIKE 'SEP%'"
-
-# Discover available operations
-cisco-axl operations --filter phone
-cisco-axl operations --type action --filter phone
-
-# Describe what tags an operation needs
-cisco-axl describe getPhone --detailed
-
-# Execute any AXL operation
-cisco-axl execute doLdapSync --tags '{"name":"LDAP_Main"}'
 ```
 
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `config add/use/list/show/remove/test` | Manage multi-cluster configurations |
-| `get <type> <identifier>` | Get a single item |
-| `list <type>` | List items with search, pagination, returned tags |
-| `add <type>` | Add an item (inline JSON, template, or bulk CSV) |
-| `update <type> <identifier>` | Update an item |
-| `remove <type> <identifier>` | Remove an item |
-| `sql query/update` | Execute SQL against CUCM |
-| `execute <operation>` | Run any raw AXL operation |
-| `operations` | List available operations with `--filter` and `--type crud\|action` |
-| `describe <operation>` | Show tag schema with `--detailed` for required/optional/type info |
-
-### Configuration
+## Configuration
 
 ```bash
 # Multiple clusters
@@ -98,6 +69,9 @@ cisco-axl config add lab --host 10.0.0.1 --username admin --password secret --cu
 cisco-axl config add prod --host 10.0.0.2 --username axladmin --password secret --cucm-version 15.0 --insecure
 cisco-axl config use prod
 cisco-axl config list
+cisco-axl config show
+cisco-axl config remove lab
+cisco-axl config test
 
 # Per-command cluster override
 cisco-axl list Phone --search "name=SEP%" --cluster lab
@@ -108,13 +82,34 @@ export CUCM_HOST=10.0.0.1 CUCM_USERNAME=admin CUCM_PASSWORD=secret CUCM_VERSION=
 
 Config stored at `~/.cisco-axl/config.json`. Supports optional [Secret Server](https://github.com/sieteunoseis/ss-cli) integration via `<ss:ID:field>` placeholders.
 
-### Output Formats
+## CLI Commands
+
+| Command                                | Description                                                         |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| `config add/use/list/show/remove/test` | Manage multi-cluster configurations                                 |
+| `get <type> <identifier>`              | Get a single item                                                   |
+| `list <type>`                          | List items with search, pagination, returned tags                   |
+| `add <type>`                           | Add an item (inline JSON, template, or bulk CSV)                    |
+| `update <type> <identifier>`           | Update an item                                                      |
+| `remove <type> <identifier>`           | Remove an item                                                      |
+| `sql query/update`                     | Execute SQL against CUCM                                            |
+| `execute <operation>`                  | Run any raw AXL operation                                           |
+| `operations`                           | List available operations with `--filter` and `--type crud\|action` |
+| `describe <operation>`                 | Show tag schema with `--detailed` for required/optional/type info   |
+| `doctor`                               | Check AXL connectivity and configuration health                     |
+
+### Operation Discovery
 
 ```bash
-cisco-axl list Phone --search "name=SEP%" --format table  # default, human-readable
-cisco-axl list Phone --search "name=SEP%" --format json   # structured JSON
-cisco-axl list Phone --search "name=SEP%" --format toon   # token-efficient for AI agents
-cisco-axl list Phone --search "name=SEP%" --format csv    # spreadsheet export
+# Discover available operations
+cisco-axl operations --filter phone
+cisco-axl operations --type action --filter phone
+
+# Describe what tags an operation needs
+cisco-axl describe getPhone --detailed
+
+# Execute any AXL operation
+cisco-axl execute doLdapSync --tags '{"name":"LDAP_Main"}'
 ```
 
 ### Bulk Operations from CSV
@@ -131,6 +126,7 @@ cisco-axl add Phone --template phone-template.json --vars '{"mac":"001122334455"
 ```
 
 Template file (`phone-template.json`):
+
 ```json
 {
   "name": "SEP%%mac%%",
@@ -138,18 +134,6 @@ Template file (`phone-template.json`):
   "description": "%%description%%",
   "protocol": "SIP"
 }
-```
-
-### Global Flags
-
-```
---format table|json|toon|csv   Output format (default: table)
---insecure                     Skip TLS certificate verification
---clean                        Remove empty/null values from results
---no-attributes                Remove XML attributes from results
---read-only                    Restrict to read-only operations
---no-audit                     Disable audit logging for this command
---debug                        Enable debug logging
 ```
 
 ### Command Chaining
@@ -184,7 +168,28 @@ cisco-axl describe applyPhone --format json | \
 
 The `--stdin` flag is available on `add`, `update`, and `execute`. It is mutually exclusive with `--data`/`--tags` and `--template`.
 
-### Audit Trail
+## Global Flags
+
+```
+--format table|json|toon|csv   Output format (default: table)
+--insecure                     Skip TLS certificate verification
+--clean                        Remove empty/null values from results
+--no-attributes                Remove XML attributes from results
+--read-only                    Restrict to read-only operations
+--no-audit                     Disable audit logging for this command
+--debug                        Enable debug logging
+```
+
+## Output Formats
+
+```bash
+cisco-axl list Phone --search "name=SEP%" --format table  # default, human-readable
+cisco-axl list Phone --search "name=SEP%" --format json   # structured JSON
+cisco-axl list Phone --search "name=SEP%" --format toon   # token-efficient for AI agents
+cisco-axl list Phone --search "name=SEP%" --format csv    # spreadsheet export
+```
+
+## Audit Trail
 
 All operations are logged to `~/.cisco-axl/audit.jsonl` (JSONL format). Credentials are never logged. Use `--no-audit` to skip.
 
@@ -195,14 +200,53 @@ All operations are logged to `~/.cisco-axl/audit.jsonl` (JSONL format). Credenti
 ```javascript
 const axlService = require("cisco-axl");
 
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
+let service = new axlService(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  "14.0",
+);
 
 // With options
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
-  logging: { level: "info" },
-  retry: { retries: 3, retryDelay: 1000 }
-});
+let service = new axlService(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  "14.0",
+  {
+    logging: { level: "info" },
+    retry: { retries: 3, retryDelay: 1000 },
+  },
+);
 ```
+
+### ESM / TypeScript
+
+```javascript
+// CommonJS
+const axlService = require("cisco-axl");
+
+// ESM
+import axlService from "cisco-axl";
+import { AXLAuthError, AXLOperationError } from "cisco-axl";
+```
+
+```typescript
+import axlService from "cisco-axl";
+
+const service = new axlService(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  "14.0",
+);
+
+const tags = await service.getOperationTags("listRoutePartition");
+tags.searchCriteria.name = "%%";
+const result = await service.executeOperation("listRoutePartition", tags);
+```
+
+See the `examples/typescript` directory for more examples.
 
 ### Logging
 
@@ -211,14 +255,20 @@ let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0",
 // DEBUG=true
 
 // Via constructor
-let service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0", {
-  logging: {
-    level: "info",  // "error" | "warn" | "info" | "debug"
-    handler: (level, message, data) => {
-      myLogger[level](message, data);
-    }
-  }
-});
+let service = new axlService(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  "14.0",
+  {
+    logging: {
+      level: "info", // "error" | "warn" | "info" | "debug"
+      handler: (level, message, data) => {
+        myLogger[level](message, data);
+      },
+    },
+  },
+);
 
 // Change at runtime
 service.setLogLevel("debug");
@@ -232,17 +282,21 @@ await service.getItem("Phone", "SEP001122334455");
 await service.getItem("Phone", { uuid: "abc-123" });
 
 // List items with search criteria and returned tags
-await service.listItems("RoutePartition");  // all partitions
+await service.listItems("RoutePartition"); // all partitions
 await service.listItems("Phone", { name: "SEP%" }, { name: "", model: "" });
 
 // Add, update, remove
 await service.addItem("RoutePartition", { name: "NEW-PT", description: "New" });
-await service.updateItem("Phone", "SEP001122334455", { description: "Updated" });
+await service.updateItem("Phone", "SEP001122334455", {
+  description: "Updated",
+});
 await service.removeItem("RoutePartition", "NEW-PT");
 
 // SQL
 const rows = await service.executeSqlQuery("SELECT name FROM routepartition");
-await service.executeSqlUpdate("UPDATE routepartition SET description='test' WHERE name='NEW-PT'");
+await service.executeSqlUpdate(
+  "UPDATE routepartition SET description='test' WHERE name='NEW-PT'",
+);
 ```
 
 ### Operation Discovery
@@ -257,8 +311,8 @@ const tags = await service.getOperationTags("addRoutePartition");
 
 // Get detailed metadata (required, nillable, type)
 const detailed = await service.getOperationTagsDetailed("addRoutePartition");
-console.log(detailed.routePartition.required);  // true
-console.log(detailed.routePartition.children.name.type);  // "string"
+console.log(detailed.routePartition.required); // true
+console.log(detailed.routePartition.children.name.type); // "string"
 ```
 
 ### Execute Any Operation
@@ -275,28 +329,41 @@ console.log("UUID:", result);
 ### Batch Operations
 
 ```javascript
-const results = await service.executeBatch([
-  { operation: "getPhone", tags: { name: "SEP001122334455" } },
-  { operation: "getPhone", tags: { name: "SEP556677889900" } },
-], 5); // concurrency limit
+const results = await service.executeBatch(
+  [
+    { operation: "getPhone", tags: { name: "SEP001122334455" } },
+    { operation: "getPhone", tags: { name: "SEP556677889900" } },
+  ],
+  5,
+); // concurrency limit
 
 results.forEach((r) => {
-  console.log(r.success ? `${r.operation}: OK` : `${r.operation}: ${r.error.message}`);
+  console.log(
+    r.success ? `${r.operation}: OK` : `${r.operation}: ${r.error.message}`,
+  );
 });
 ```
 
 ### Error Handling
 
 ```javascript
-const { AXLAuthError, AXLNotFoundError, AXLOperationError, AXLValidationError } = require("cisco-axl");
+const {
+  AXLAuthError,
+  AXLNotFoundError,
+  AXLOperationError,
+  AXLValidationError,
+} = require("cisco-axl");
 
 try {
   await service.executeOperation("getPhone", { name: "INVALID" });
 } catch (error) {
   if (error instanceof AXLAuthError) console.log("Bad credentials");
-  else if (error instanceof AXLNotFoundError) console.log("Operation not found:", error.operation);
-  else if (error instanceof AXLOperationError) console.log("SOAP fault:", error.message);
-  else if (error instanceof AXLValidationError) console.log("Invalid input:", error.message);
+  else if (error instanceof AXLNotFoundError)
+    console.log("Operation not found:", error.operation);
+  else if (error instanceof AXLOperationError)
+    console.log("SOAP fault:", error.message);
+  else if (error instanceof AXLValidationError)
+    console.log("Invalid input:", error.message);
 }
 ```
 
@@ -307,20 +374,9 @@ let service = new axlService("10.10.20.1", "admin", "pass", "14.0", {
   retry: {
     retries: 3,
     retryDelay: 1000,
-    retryOn: (error) => error.message.includes("ECONNRESET")
-  }
+    retryOn: (error) => error.message.includes("ECONNRESET"),
+  },
 });
-```
-
-### ESM Support
-
-```javascript
-// CommonJS
-const axlService = require("cisco-axl");
-
-// ESM
-import axlService from "cisco-axl";
-import { AXLAuthError, AXLOperationError } from "cisco-axl";
 ```
 
 ### json-variables Support
@@ -341,34 +397,34 @@ const lineTags = jVar(lineTemplate);
 await service.executeOperation("updateLine", lineTags);
 ```
 
-## Methods Reference
+### Methods Reference
 
-### Core
+#### Core
 
-| Method | Description |
-|--------|-------------|
-| `new axlService(host, user, pass, version, opts?)` | Constructor |
-| `testAuthentication()` | Test credentials against AXL endpoint |
-| `returnOperations(filter?)` | List available operations |
-| `getOperationTags(operation)` | Get tag schema for an operation |
-| `getOperationTagsDetailed(operation)` | Get detailed tag metadata (required/nillable/type) |
-| `executeOperation(operation, tags, opts?)` | Execute any AXL operation |
-| `executeBatch(operations[], concurrency?)` | Parallel batch execution |
-| `setLogLevel(level)` | Change log level at runtime |
+| Method                                             | Description                                        |
+| -------------------------------------------------- | -------------------------------------------------- |
+| `new axlService(host, user, pass, version, opts?)` | Constructor                                        |
+| `testAuthentication()`                             | Test credentials against AXL endpoint              |
+| `returnOperations(filter?)`                        | List available operations                          |
+| `getOperationTags(operation)`                      | Get tag schema for an operation                    |
+| `getOperationTagsDetailed(operation)`              | Get detailed tag metadata (required/nillable/type) |
+| `executeOperation(operation, tags, opts?)`         | Execute any AXL operation                          |
+| `executeBatch(operations[], concurrency?)`         | Parallel batch execution                           |
+| `setLogLevel(level)`                               | Change log level at runtime                        |
 
-### Convenience
+#### Convenience
 
-| Method | Description |
-|--------|-------------|
-| `getItem(type, identifier, opts?)` | Get single item by name or UUID |
-| `listItems(type, search?, returnedTags?, opts?)` | List items with filtering |
-| `addItem(type, data, opts?)` | Add a new item |
-| `updateItem(type, identifier, updates, opts?)` | Update an existing item |
-| `removeItem(type, identifier, opts?)` | Remove an item |
-| `executeSqlQuery(sql)` | Run a SQL SELECT query |
-| `executeSqlUpdate(sql)` | Run a SQL INSERT/UPDATE/DELETE |
+| Method                                           | Description                     |
+| ------------------------------------------------ | ------------------------------- |
+| `getItem(type, identifier, opts?)`               | Get single item by name or UUID |
+| `listItems(type, search?, returnedTags?, opts?)` | List items with filtering       |
+| `addItem(type, data, opts?)`                     | Add a new item                  |
+| `updateItem(type, identifier, updates, opts?)`   | Update an existing item         |
+| `removeItem(type, identifier, opts?)`            | Remove an item                  |
+| `executeSqlQuery(sql)`                           | Run a SQL SELECT query          |
+| `executeSqlUpdate(sql)`                          | Run a SQL INSERT/UPDATE/DELETE  |
 
-## Examples
+### Examples
 
 Check the **examples** folder for different ways to use this library.
 
@@ -378,22 +434,12 @@ Run the integration tests against a CUCM cluster:
 npm run staging
 ```
 
-## TypeScript Support
-
-```typescript
-import axlService from 'cisco-axl';
-
-const service = new axlService("10.10.20.1", "administrator", "ciscopsdt", "14.0");
-
-const tags = await service.getOperationTags("listRoutePartition");
-tags.searchCriteria.name = "%%";
-const result = await service.executeOperation("listRoutePartition", tags);
-```
-
-See the `examples/typescript` directory for more examples.
-
 ## Giving Back
 
-If you would like to support my work and the time I put in creating the code, you can click the image below to get me a coffee. I would really appreciate it (but is not required).
+If you found this helpful, consider:
 
-[Buy Me a Coffee](https://www.buymeacoffee.com/automatebldrs)
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/automatebldrs)
+
+## License
+
+MIT
