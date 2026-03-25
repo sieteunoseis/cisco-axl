@@ -3,11 +3,11 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
-  id-token: write    # Required for OIDC authentication
-  contents: write    # Required for creating GitHub Release
+  id-token: write # Required for OIDC authentication
+  contents: write # Required for creating GitHub Release
 
 jobs:
   publish:
@@ -19,8 +19,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Update npm
         run: npm install -g npm@latest
@@ -41,7 +41,7 @@ jobs:
         run: node -e "const axlService = require('./dist/index.js'); console.log('CJS require OK');"
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
