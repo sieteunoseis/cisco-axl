@@ -2,6 +2,18 @@
 
 [Claude Code hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) let you enforce guardrails when AI agents use the CLI. The examples below block write operations so Claude can only read from CUCM.
 
+## Quick Install
+
+Install the write-safety hook with one command using [cc-hooks-install](https://github.com/sieteunoseis/cc-hooks-install):
+
+```bash
+npx cc-hooks-install add sieteunoseis/cisco-axl
+```
+
+This fetches the hook definitions from this repo, shows an interactive prompt to select which hooks to install, and merges them into your `~/.claude/settings.json`.
+
+If you prefer to install manually, see below.
+
 ## Block Write Operations
 
 Add this to your `~/.claude/settings.json` (global) or `.claude/settings.json` (project-level) under `hooks.PreToolUse`:

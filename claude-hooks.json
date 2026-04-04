@@ -1,0 +1,30 @@
+{
+  "name": "cisco-axl",
+  "description": "Hooks for Cisco CUCM AXL CLI",
+  "author": "sieteunoseis",
+  "version": "1.0.0",
+  "hooks": [
+    {
+      "name": "Block write operations",
+      "description": "Blocks add, update, remove, execute, and sql update commands",
+      "default": true,
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "hook": {
+        "type": "command",
+        "command": "jq -r '.tool_input.command' | { read -r cmd; if echo \"$cmd\" | grep -qE '^(npx )?cisco-axl (add|update|remove|execute|sql update)'; then echo '{\"decision\":\"block\",\"reason\":\"BLOCKED: cisco-axl write operation. Use --read-only or get explicit user approval.\"}'; fi; }"
+      }
+    },
+    {
+      "name": "Enforce --read-only flag",
+      "description": "Requires --read-only on every cisco-axl command",
+      "default": false,
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "hook": {
+        "type": "command",
+        "command": "jq -r '.tool_input.command' | { read -r cmd; if echo \"$cmd\" | grep -qE '^(npx )?cisco-axl ' && ! echo \"$cmd\" | grep -q '\\-\\-read-only'; then echo '{\"decision\":\"block\",\"reason\":\"BLOCKED: cisco-axl must be run with --read-only. Retry with the flag.\"}'; fi; }"
+      }
+    }
+  ]
+}
